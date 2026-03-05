@@ -1,0 +1,23 @@
+-----TODO LIST-------
+
+- Model Game
+	- Tiles
+	- Traps
+	- Dice
+	- Circle (looping) property
+
+- Markov Process
+	- Transition Probability modelling
+	- Value iteration method
+
+- Testing
+	- MDP
+	- other strategies
+	- analysis
+
+- Report (6 pages max)
+	- Intro
+	- theoretical explanation of method
+	- Short description of implementation
+	- Comparison theoretical and empirical results
+	- conclusion
