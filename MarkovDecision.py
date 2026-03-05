@@ -51,6 +51,9 @@ class Game:
     def check_win(self):
         return (self.current_tile.tile_id == 15)
 
+
+    #TO REMOVE OR CHANGE
+    #This function (and this function only) was written using Gemini
     def print_board(self):
         p_id = self.current_tile.tile_id
         
