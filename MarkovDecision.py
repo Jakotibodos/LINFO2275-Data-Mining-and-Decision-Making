@@ -1,10 +1,13 @@
 import numpy as np
 
+
+BOARD_SIZE = 15
 class Game:
     def __init__(self,tiles):
         self.tiles = tiles
         self.current_tile = self.tiles[0]
         self.turn_count = 0
+
         self.dice={ 1: ([0,1], None), 
                     2: ([0,1,2], 0.5), 
                     3: ([0,1,2,3], 1), 
@@ -109,20 +112,34 @@ class Tile:
         self.previous_tile = None #Tile, no use for more than 1 previous tile
         self.trap = trap # 0 = ordinary square, 1 = restart, 2 = penalty (-3 tiles), 3 prison (skip turn)
     
-    def step_forward(self, nb_tiles,is_start_tile_3 = False):
+    def step(self, nb_tiles, is_start_tile_3 = False, tile_3_rand = None):
+        if nb_tiles > 0:
+            return self.step_forward(nb_tiles, is_start_tile_3, tile_3_rand)
+        elif nb_tiles < 0:
+            return self.step_backwards(-1*nb_tiles)
+        return self
+
+    def step_forward(self, nb_tiles,is_start_tile_3 = False, tile_3_rand = None):
         #Step forward nb_tiles amount of steps
         #next_tile[0] in case of tile 3, take longest path by default
         if nb_tiles > 0:
-            if is_start_tile_3 and np.random.random() > 0.5:
-                return self.next_tile[1].step_forward(nb_tiles-1) #Branch to fast lane
+            if is_start_tile_3:
+                if tile_3_rand is None:
+                    tile_3_rand = np.random.random()
+                if tile_3_rand > 0.5:
+                    return self.next_tile[1].step_forward(nb_tiles-1) #Branch to fast lane
+                else:
+                    return self.next_tile[0].step_forward(nb_tiles-1)
             return self.next_tile[0].step_forward(nb_tiles-1) 
-        return self
+        else:
+            return self
     
     def step_backwards(self, nb_tiles):
         #Step backwards nb_tiles amount of steps
         if nb_tiles > 0:
             return self.previous_tile.step_backwards(nb_tiles-1)
-        return self
+        else:
+            return self
 
 
 def generate_board(layout, circle):
@@ -146,7 +163,7 @@ def generate_board(layout, circle):
     return tiles_list
     
 
-def markovDecision(layout,circle):
+def playManual(layout,circle):
     game = Game(generate_board(layout,circle))
 
     while(not game.check_win()):
@@ -162,5 +179,95 @@ def markovDecision(layout,circle):
 
 
 
+def markovDecision(layout, circle):
+    game = Game(generate_board(layout, circle))
+    V = np.ones(BOARD_SIZE)
+    policy = np.ones(BOARD_SIZE, dtype=int)
+    stability_tol = 0.0001
+    unstable = True
+    V[-1] = 0  ## situation where player lands on final square
 
-markovDecision([0,0,0,0,1,0,0,0,0,3,0,0,2,0,0],True)
+    def expected_value(landed_tile, trap_chance):
+        trap_type = landed_tile.trap
+
+        # either safe dice or regular tile
+        if trap_chance is None or trap_type == 0:
+            return V[landed_tile.tile_id - 1]
+
+        # trap does not activate
+        expected_val = (1 - trap_chance) * V[landed_tile.tile_id - 1]
+
+        # trap activates
+        if trap_type == 1:  # restart_trap
+            trapped_tile = landed_tile.step_backwards(15)  # move back to beginning, cannot reactivate traps
+            expected_val += trap_chance * V[trapped_tile.tile_id - 1]
+
+        elif trap_type == 2:  # penalty trap
+            trapped_tile = landed_tile.step_backwards(3) 
+            expected_val += trap_chance * V[trapped_tile.tile_id - 1]
+
+        elif trap_type == 3:  # prison trap, adds 1 for bonus turn wasted
+            expected_val += trap_chance * (1 + V[landed_tile.tile_id - 1])
+
+        return expected_val
+
+    while unstable:
+        newV = np.copy(V)
+
+        for tile in game.tiles:
+            tile_idx = tile.tile_id - 1
+
+            if tile.tile_id == BOARD_SIZE:
+                newV[tile_idx] = 0
+                continue
+
+            currMin = np.inf
+            currMinDice = 1
+
+            for i in range(1, 5):  # each dice
+                startTile = tile
+                endTile = tile
+                currSum = 0
+
+                die_rolls = game.dice[i][0]
+                trap_chance = game.dice[i][1]
+
+                for roll in die_rolls:  # each possible roll
+                    if startTile.tile_id == 3 and roll > 0:
+                        next_tile_fast = startTile.step(roll, True, 1)
+                        next_tile_slow = startTile.step(roll, True, 0)
+
+                        currSum += 0.5 * expected_value(next_tile_fast, trap_chance)
+                        currSum += 0.5 * expected_value(next_tile_slow, trap_chance)
+                    else:
+                        next_tile = startTile.step(roll)
+                        currSum += expected_value(next_tile, trap_chance)
+                expectedCost = 1 + (currSum * 1.0 / len(die_rolls))
+
+                if expectedCost < currMin:
+                    currMin = expectedCost
+                    currMinDice = i
+
+            newV[tile_idx] = currMin
+            policy[tile_idx] = currMinDice
+
+            if abs(newV[tile_idx] - V[tile_idx]) < stability_tol:
+                unstable = False
+
+        V = np.copy(newV)
+
+    print(V)
+    print(policy)
+    return V, policy
+
+
+testLayout = np.ones(15)
+circle = False
+
+#markovDecision(testLayout, circle)
+
+
+
+#markovDecision([3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],True)
+markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],False)
+markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],True)
