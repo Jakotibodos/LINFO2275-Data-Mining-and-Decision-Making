@@ -15,17 +15,17 @@ class Game:
         
         
 
-    def roll_die(self, die_id):
+    def roll_dice(self, dice_id):
         self.turn_count += 1
-        die_used = self.dice[die_id]
-        trap_chance = die_used[1]
-        die_result = die_used[0][np.random.randint(0,len(die_used[0]))]
-        print("Die_result", die_result)
+        dice_used = self.dice[dice_id]
+        trap_chance = dice_used[1]
+        dice_result = dice_used[0][np.random.randint(0,len(dice_used[0]))]
+        # print("dice_result", dice_result)
         #move
-        if die_result < 0:
-            self.current_tile = self.current_tile.step_backwards(-die_result)
+        if dice_result < 0:
+            self.current_tile = self.current_tile.step_backwards(-dice_result)
         else: 
-            self.current_tile = self.current_tile.step_forward(die_result, is_start_tile_3 = (self.current_tile.tile_id == 3))
+            self.current_tile = self.current_tile.step_forward(dice_result, is_start_tile_3 = (self.current_tile.tile_id == 3))
 
         
         #activate traps if needed
@@ -40,7 +40,7 @@ class Game:
             return self.current_tile
         
         if trap_probabilty > np.random.random(): #if trap activates
-            print("TRAP ACTIVATED, type:",trap_type)
+            # print("TRAP ACTIVATED, type:",trap_type)
             if trap_type == 1: #restart_trap
                 return self.current_tile.step_backwards(15) #move back to beginning, cannot reactivate traps
             
@@ -169,25 +169,16 @@ def playManual(layout,circle):
     while(not game.check_win()):
         #TODO change to MDP
         print("----- TURN",game.turn_count,"-------")
-        game.roll_die(int(input("Enter die choice (1:security, 2:normal, 3:risky, 4:special)\n"))) 
+        game.roll_dice(int(input("Enter dice choice (1:security, 2:normal, 3:risky, 4:special)\n"))) 
         game.print_board()
         print()
         
     print("You won the game in",game.turn_count,"turns!")
-    #TODO change to (Expec, Dice)
+    #TODO change to (Expec, dice)
     return game.turn_count
 
 
-
-def markovDecision(layout, circle):
-    game = Game(generate_board(layout, circle))
-    V = np.ones(BOARD_SIZE)
-    policy = np.ones(BOARD_SIZE, dtype=int)
-    stability_tol = 0.0001
-    unstable = True
-    V[-1] = 0  ## situation where player lands on final square
-
-    def expected_value(landed_tile, trap_chance):
+def expected_value(landed_tile, trap_chance, V):
         trap_type = landed_tile.trap
 
         # either safe dice or regular tile
@@ -211,7 +202,98 @@ def markovDecision(layout, circle):
 
         return expected_val
 
-    while unstable:
+def action(game, start_tile, dice_id, V):
+
+    dice_rolls = game.dice[dice_id][0]
+    trap_chance = game.dice[dice_id][1]
+
+    curr_sum = 0.0
+
+    for roll in dice_rolls:
+        if start_tile.tile_id == 3 and roll > 0:
+            next_tile_fast = start_tile.step(roll, True, 1)
+            next_tile_slow = start_tile.step(roll, True, 0)
+
+            curr_sum += 0.5 * expected_value(next_tile_fast, trap_chance, V)
+            curr_sum += 0.5 * expected_value(next_tile_slow, trap_chance, V)
+        else:
+            next_tile = start_tile.step(roll)
+            curr_sum += expected_value(next_tile, trap_chance, V)
+
+    return 1 + curr_sum / len(dice_rolls)
+
+def evaluate_policy(layout, circle, policy, name, max_iter=10000):
+    game = Game(generate_board(layout, circle))
+    V = np.ones(BOARD_SIZE)
+    V[-1] = 0  # not really need this
+
+    for it in range(max_iter):
+        newV = np.copy(V)
+        for tile in game.tiles:
+            tile_idx = tile.tile_id - 1
+
+            if tile.tile_id == BOARD_SIZE:
+                newV[tile_idx] = 0
+                continue
+
+            if name == "uniform_random":
+                newV[tile_idx] = np.mean([action(game, tile, dice_id, V) for dice_id in range(1, 5)])
+            elif name == "always":
+                dice_id = policy # deterministic dice
+                newV[tile_idx] = action(game, tile, dice_id, V)
+            else:  # optimal policy
+                dice_id = policy[tile_idx]
+                newV[tile_idx] = action(game, tile, dice_id, V)
+            
+        err = np.max(np.abs(newV - V))
+        if it % 100 == 0: #ecause sometimes we have convergence problems..
+            if name == 'always':
+                print(f"iter={it} in evaluate policy for {name} {policy}, err={err}")
+            else:
+                print(f"iter={it} in evaluate policy for {name}, err={err}")
+        if np.max(np.abs(newV - V)) < 0.0001:
+            V = newV
+            break
+        V = newV
+    return V[:-1]
+
+
+def simulate_policy(layout, circle, policy, name, n_games=1000):
+    turns = []
+
+    for _ in range(n_games):
+        game = Game(generate_board(layout, circle))
+        game.current_tile = game.tiles[0]  # reset to start
+        game.turn_count = 0
+
+        while not game.check_win():
+            current_tile_id = game.current_tile.tile_id
+            if name == "uniform_random":
+                dice_id = policy()
+                game.roll_dice(dice_id)
+            elif name == "always":
+                dice_id = policy
+                game.roll_dice(dice_id)
+            else:  # optimal policy
+                dice_id = policy[current_tile_id-1]
+                game.roll_dice(dice_id)
+
+        turns.append(game.turn_count)
+    mean_turns = np.mean(turns)
+    std_turns = np.std(turns) / np.sqrt(n_games) 
+
+    return mean_turns, std_turns
+
+
+def markovDecision(layout, circle):
+    game = Game(generate_board(layout, circle))
+    V = np.ones(BOARD_SIZE)
+    policy = np.ones(BOARD_SIZE, dtype=int)
+    stability_tol = 0.0001
+    max_iterations = 10000
+    V[-1] = 0  ## situation where player lands on final square
+
+    for it in range(max_iterations):
         newV = np.copy(V)
 
         for tile in game.tiles:
@@ -222,43 +304,80 @@ def markovDecision(layout, circle):
                 continue
 
             currMin = np.inf
-            currMinDice = 1
+            currMindice = 1
 
             for i in range(1, 5):  # each dice
                 startTile = tile
                 endTile = tile
                 currSum = 0
 
-                die_rolls = game.dice[i][0]
+                dice_rolls = game.dice[i][0]
                 trap_chance = game.dice[i][1]
 
-                for roll in die_rolls:  # each possible roll
+                for roll in dice_rolls:  # each possible roll
                     if startTile.tile_id == 3 and roll > 0:
                         next_tile_fast = startTile.step(roll, True, 1)
                         next_tile_slow = startTile.step(roll, True, 0)
 
-                        currSum += 0.5 * expected_value(next_tile_fast, trap_chance)
-                        currSum += 0.5 * expected_value(next_tile_slow, trap_chance)
+                        currSum += 0.5 * expected_value(next_tile_fast, trap_chance, V)
+                        currSum += 0.5 * expected_value(next_tile_slow, trap_chance, V)
                     else:
                         next_tile = startTile.step(roll)
-                        currSum += expected_value(next_tile, trap_chance)
-                expectedCost = 1 + (currSum * 1.0 / len(die_rolls))
+                        currSum += expected_value(next_tile, trap_chance, V)
+                expectedCost = 1 + (currSum * 1.0 / len(dice_rolls))
 
                 if expectedCost < currMin:
                     currMin = expectedCost
-                    currMinDice = i
+                    currMindice = i
 
             newV[tile_idx] = currMin
-            policy[tile_idx] = currMinDice
-
-            if abs(newV[tile_idx] - V[tile_idx]) < stability_tol:
-                unstable = False
+            policy[tile_idx] = currMindice
+        err = np.max(np.abs(newV - V))
+        if it % 100 == 0:
+            print(f"iter={it} in markov decision, err={err}")
+        if np.max(np.abs(newV - V)) < stability_tol: # Here, we need to check the global convergence of the whole states, not just one state.
+            V = newV
+            print("Convergence achieved after", it+1, "iterations.")
+            break
 
         V = np.copy(newV)
 
-    print(V)
-    print(policy)
-    return V, policy
+    # print("The total expected number of turns is:", V)
+    print("The optimal cost without last tile is:", V[:-1])
+    # print("The optimal policy is:", policy)
+    print("The optimal policy without last tile is:", policy[:-1])
+    return [V[:-1], policy[:-1]] # We should not return the expected cost and the policy (=0) of the last tile!
+
+
+def policy_uniform_random(): # Policy purely random choice of dice
+    return lambda: np.random.choice([1,2,3,4])
+
+def compare_strategies(layout, circle, n_games = 5000):
+    optimal_results = markovDecision(layout, circle)
+    opt_cost = optimal_results[0]
+    opt_policy = optimal_results[1]
+
+    res = {}
+    res['Optimal_theoretical'] = evaluate_policy(layout, circle, opt_policy, "optimal")[0]
+    res['Optimal_test'] = simulate_policy(layout, circle, opt_policy, "optimal", n_games)
+
+    for dice_id in range(1, 5):
+        res[f'dice_{dice_id}_theoretical'] = evaluate_policy(layout, circle, dice_id, "always")[0]
+        res[f'dice_{dice_id}_test'] = simulate_policy(layout, circle, dice_id,"always", n_games)
+    res['Uniform_random_theoretical'] = evaluate_policy(layout, circle, policy_uniform_random(), "uniform_random")[0]
+    res['Uniform_random_test'] = simulate_policy(layout, circle, policy_uniform_random(), "uniform_random", n_games)
+    print("Start square expected turns (theory / empirical +- stderr)")
+    print(f"optimal: {res['Optimal_theoretical']:.4f} / {res['Optimal_test'][0]:.4f} +- {res['Optimal_test'][1]:.4f}")
+    for dice_id in (1, 2, 3, 4):
+        th = res[f'dice_{dice_id}_theoretical']
+        emp, se = res[f'dice_{dice_id}_test']
+        print(f"dice {dice_id} only: {th:.4f} / {emp:.4f} +- {se:.4f}")
+    emp, se = res['Uniform_random_test']
+    print(
+        f"uniform random: {res['Uniform_random_theoretical']:.4f} / {emp:.4f} +- {se:.4f}"
+    )
+
+    return res
 
 
 testLayout = np.ones(15)
@@ -269,5 +388,23 @@ circle = False
 
 
 #markovDecision([3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],True)
-markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],False)
-markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],True)
+# out = markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],False)
+# out = markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],True)
+trap = []
+trap.append(int(np.random.choice([0,3]))) # Not meaningful to have traps of type 1 or 2 on the first tile (so only 0 or 3)
+for i in range(1,14):
+    trap.append(np.random.randint(0,4)) # We need to make this more restrictive as for some layouts and some suboptimal policies (see example on whatsapp)
+trap.append(0) # Not meaningful to have traps on last tile as we won the game no matter what
+print("Trap layout:", trap)
+out = markovDecision(trap, False)
+compare_strategies(trap, False)
+
+#Example of a run :
+#Trap layout: [0, 3, 1, 3, 1, 0, 3, 1, 3, 2, 3, 1, 3, 0, 0], n_games = 5000
+# Start square expected turns (theory / empirical +- stderr)
+# optimal: 11.6996 / 11.6866 +- 0.1085
+# dice 1 only: 16.9999 / 16.9068 +- 0.0709
+# dice 2 only: 27.4180 / 27.3798 +- 0.2806
+# dice 3 only: 41.4978 / 40.4924 +- 0.4681
+# dice 4 only: 13.3414 / 13.4720 +- 0.1587
+# uniform random: 24.6999 / 24.7310 +- 0.2762
