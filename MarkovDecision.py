@@ -202,12 +202,72 @@ def expected_value(landed_tile, trap_chance, V):
 
         return expected_val
 
+
+# Checks if node 15 is reacheable depending on which dice are available
+def check_layout_convergeance(layout, circle, dice_available = [1,2,3,4]):
+    graph = np.zeros(shape=(len(layout),len(layout)))
+    game = Game(generate_board(layout,circle))
+    # construct_graph
+    for starting_tile in game.tiles:
+        for die in dice_available:
+            rolls = game.dice[die][0]
+            trap_chance = game.dice[die][1]
+            for roll in rolls:
+                if die == 2: #check path for trap and no trap
+                    game.current_tile = starting_tile.step_forward(roll, is_start_tile_3 = (starting_tile.tile_id == 3))
+                    graph[starting_tile.tile_id-1][game.current_tile.tile_id-1] = 1 #No trap
+
+                    end_tile = game.activate_trap(trap_chance)
+                    graph[starting_tile.tile_id-1][end_tile.tile_id-1] = 1 #Trap
+                else: #Dice 1, 3 and 4
+                    if roll < 0:
+                        game.current_tile = starting_tile.step_backwards(-roll)
+                    else: 
+                        game.current_tile = starting_tile.step_forward(roll, is_start_tile_3 = (starting_tile.tile_id == 3))
+
+                    #activate traps or not (deterministic)
+                    end_tile = game.activate_trap(trap_chance)
+                    graph[starting_tile.tile_id-1][end_tile.tile_id-1] = 1 #add link between two tiles in graph
+
+    return is_connected(graph,0,14)
+
+
+
+#Used to check if node 15 is reacheable
+#Uses DFS
+def is_connected(matrix, start, target, visited=None):
+    if visited is None:
+        visited = set()
+    
+    #Base Case
+    if start == target:
+        return True
+    
+    visited.add(start)
+    
+    #DFS
+    for neighbor, connected in enumerate(matrix[start]):
+        if connected == 1 and neighbor not in visited:
+            # Recursive call
+            if is_connected(matrix, neighbor, target, visited):
+                return True    
+    return False
+
+
+                
+
+                
+
+
+
+
 def action(game, start_tile, dice_id, V):
 
     dice_rolls = game.dice[dice_id][0]
     trap_chance = game.dice[dice_id][1]
 
     curr_sum = 0.0
+
 
     for roll in dice_rolls:
         if start_tile.tile_id == 3 and roll > 0:
@@ -219,6 +279,8 @@ def action(game, start_tile, dice_id, V):
         else:
             next_tile = start_tile.step(roll)
             curr_sum += expected_value(next_tile, trap_chance, V)
+
+    
 
     return 1 + curr_sum / len(dice_rolls)
 
@@ -362,20 +424,30 @@ def compare_strategies(layout, circle, n_games = 5000):
     res['Optimal_test'] = simulate_policy(layout, circle, opt_policy, "optimal", n_games)
 
     for dice_id in range(1, 5):
-        res[f'dice_{dice_id}_theoretical'] = evaluate_policy(layout, circle, dice_id, "always")[0]
-        res[f'dice_{dice_id}_test'] = simulate_policy(layout, circle, dice_id,"always", n_games)
-    res['Uniform_random_theoretical'] = evaluate_policy(layout, circle, policy_uniform_random(), "uniform_random")[0]
-    res['Uniform_random_test'] = simulate_policy(layout, circle, policy_uniform_random(), "uniform_random", n_games)
+        converges = check_layout_convergeance(layout,circle, [dice_id])
+        res[f'dice_{dice_id}_theoretical'] = evaluate_policy(layout, circle, dice_id, "always")[0] if converges else "DNF"
+        res[f'dice_{dice_id}_test'] = simulate_policy(layout, circle, dice_id,"always", n_games) if converges else ("DNF","DNF")
+    
+    converges = check_layout_convergeance(layout,circle, [1,2,3,4])
+    res['Uniform_random_theoretical'] = evaluate_policy(layout, circle, policy_uniform_random(), "uniform_random")[0] if converges else "DNF"
+    res['Uniform_random_test'] = simulate_policy(layout, circle, policy_uniform_random(), "uniform_random", n_games) if converges else ("DNF","DNF")
     print("Start square expected turns (theory / empirical +- stderr)")
     print(f"optimal: {res['Optimal_theoretical']:.4f} / {res['Optimal_test'][0]:.4f} +- {res['Optimal_test'][1]:.4f}")
     for dice_id in (1, 2, 3, 4):
         th = res[f'dice_{dice_id}_theoretical']
         emp, se = res[f'dice_{dice_id}_test']
-        print(f"dice {dice_id} only: {th:.4f} / {emp:.4f} +- {se:.4f}")
+        if th == "DNF":
+            print(f"dice {dice_id} only: DNF / DNF +- NA")
+        else:
+            print(f"dice {dice_id} only: {th:.4f} / {emp:.4f} +- {se:.4f}")
     emp, se = res['Uniform_random_test']
-    print(
-        f"uniform random: {res['Uniform_random_theoretical']:.4f} / {emp:.4f} +- {se:.4f}"
-    )
+    if emp == "DNF":
+        print(f"uniform random: DNF / DNF +- NA")
+    else:
+        print(
+            f"uniform random: {res['Uniform_random_theoretical']:.4f} / {emp:.4f} +- {se:.4f}"
+            )
+    
 
     return res
 
@@ -384,9 +456,6 @@ testLayout = np.ones(15)
 circle = False
 
 #markovDecision(testLayout, circle)
-
-
-
 #markovDecision([3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],True)
 # out = markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],False)
 # out = markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],True)
@@ -396,6 +465,9 @@ for i in range(1,14):
     trap.append(np.random.randint(0,4)) # We need to make this more restrictive as for some layouts and some suboptimal policies (see example on whatsapp)
 trap.append(0) # Not meaningful to have traps on last tile as we won the game no matter what
 print("Trap layout:", trap)
+
+#trap = [3,2,1,2,0,0,0,0,3,2,1,1,1,3,0]
+
 out = markovDecision(trap, False)
 compare_strategies(trap, False)
 
@@ -408,3 +480,23 @@ compare_strategies(trap, False)
 # dice 3 only: 41.4978 / 40.4924 +- 0.4681
 # dice 4 only: 13.3414 / 13.4720 +- 0.1587
 # uniform random: 24.6999 / 24.7310 +- 0.2762
+
+#check_layout_convergeance([3, 1, 1, 1, 3, 0, 2, 1, 0, 2, 0, 2, 2, 0, 0],False,[3])
+
+
+
+
+"""
+TEST LAYOUT FOR DIFFERENT SCENARIOS
+no_trap_layout = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+few_traps_layout = [0,0,3,0,0,0,3,0,0,0,0,3,0,0,0]
+many_traps_layout = [0, 0, 1, 1, 3, 2, 1, 3, 2, 1, 1, 0, 1, 1, 0]
+two_in_a_row_layout = [0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0]
+evil_fast_lane_layout = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 3, 1, 0]
+back_to_3_layout = [0,0,0,0,0,2,0,0,0,1,0,0,2,0,0]
+game = Game(generate_board([0,0,0,0,0,2,0,0,0,1,0,0,2,0,0],False))
+game.print_board()
+"""
+
+
+
