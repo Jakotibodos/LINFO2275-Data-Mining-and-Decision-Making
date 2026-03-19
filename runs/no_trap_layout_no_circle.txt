@@ -1,0 +1,10 @@
+The optimal cost without last tile is: [6.3050585  5.94956245 4.50958202 4.93820805 4.40097752 3.67207983 3.16049383 2.37037037 1.77777778 1.33333333 2.25925926 2.00925926 1.77777778 1.33333333]
+The optimal policy without last tile is: [4 3 3 4 3 4 3 3 3 3 4 4 3 3]
+
+Start square expected turns (theory / empirical +- stderr)
+optimal: 6.3050 / 6.2390 +- 0.0922
+dice 1 only: 16.9999 / 17.0800 +- 0.1665
+dice 2 only: 9.2124 / 9.2190 +- 0.0880
+dice 3 only: 6.6674 / 6.6240 +- 0.0636
+dice 4 only: 7.5802 / 7.4300 +- 0.1571
+uniform random: 9.2583 / 9.5310 +- 0.1491

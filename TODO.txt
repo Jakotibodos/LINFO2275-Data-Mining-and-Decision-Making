@@ -1,19 +1,23 @@
------TODO LIST-------
+-----TODO LIST------- 29th March
 
-- Model Game
-	- Tiles
-	- Traps
-	- Dice
-	- Circle (looping) property
+- Model Game (DONE)
+	- Tiles (DONE)
+	- Traps (DONE)
+	- Dice (DONE)
+	- Circle (looping) property (DONE)
+
+
 
 - Markov Process
-	- Transition Probability modelling
-	- Value iteration method
+	- Lore to share Markov Julia code (DONE)
+	- Transition Probability modelling (building the matrix) (Done)
+	- Value iteration method (DONE)
 
-- Testing
-	- MDP
-	- other strategies
+- Testing (22nd march deadline, ideally before)
+	- MDP (DONE)
+	- other strategies (DONE)
 	- analysis
+	- Visualisation
 
 - Report (6 pages max)
 	- Intro

@@ -308,11 +308,11 @@ def evaluate_policy(layout, circle, policy, name, max_iter=10000):
                 newV[tile_idx] = action(game, tile, dice_id, V)
             
         err = np.max(np.abs(newV - V))
-        if it % 100 == 0: #ecause sometimes we have convergence problems..
-            if name == 'always':
-                print(f"iter={it} in evaluate policy for {name} {policy}, err={err}")
-            else:
-                print(f"iter={it} in evaluate policy for {name}, err={err}")
+        # if it % 100 == 0: #ecause sometimes we have convergence problems..
+        #     if name == 'always':
+        #         print(f"iter={it} in evaluate policy for {name} {policy}, err={err}")
+        #     else:
+        #         print(f"iter={it} in evaluate policy for {name}, err={err}")
         if np.max(np.abs(newV - V)) < 0.0001:
             V = newV
             break
@@ -395,19 +395,19 @@ def markovDecision(layout, circle):
             newV[tile_idx] = currMin
             policy[tile_idx] = currMindice
         err = np.max(np.abs(newV - V))
-        if it % 100 == 0:
-            print(f"iter={it} in markov decision, err={err}")
+        # if it % 100 == 0:
+        #     print(f"iter={it} in markov decision, err={err}")
         if np.max(np.abs(newV - V)) < stability_tol: # Here, we need to check the global convergence of the whole states, not just one state.
             V = newV
-            print("Convergence achieved after", it+1, "iterations.")
+            #print("Convergence achieved after", it+1, "iterations.")
             break
 
         V = np.copy(newV)
 
     # print("The total expected number of turns is:", V)
-    print("The optimal cost without last tile is:", V[:-1])
+    #print("The optimal cost without last tile is:", V[:-1])
     # print("The optimal policy is:", policy)
-    print("The optimal policy without last tile is:", policy[:-1])
+    #print("The optimal policy without last tile is:", policy[:-1])
     return [V[:-1], policy[:-1]] # We should not return the expected cost and the policy (=0) of the last tile!
 
 
@@ -420,6 +420,8 @@ def compare_strategies(layout, circle, n_games = 1000):
     opt_policy = optimal_results[1]
 
     res = {}
+    res["Optimal_cost"] = opt_cost
+    res["Optimal_policy"] = opt_policy
     res['Optimal_theoretical'] = evaluate_policy(layout, circle, opt_policy, "optimal")[0]
     res['Optimal_test'] = simulate_policy(layout, circle, opt_policy, "optimal", n_games)
 
@@ -431,22 +433,24 @@ def compare_strategies(layout, circle, n_games = 1000):
     converges = check_layout_convergeance(layout,circle, [1,2,3,4])
     res['Uniform_random_theoretical'] = evaluate_policy(layout, circle, policy_uniform_random(), "uniform_random")[0] if converges else "DNF"
     res['Uniform_random_test'] = simulate_policy(layout, circle, policy_uniform_random(), "uniform_random", n_games) if converges else ("DNF","DNF")
-    print("Start square expected turns (theory / empirical +- stderr)")
-    print(f"optimal: {res['Optimal_theoretical']:.4f} / {res['Optimal_test'][0]:.4f} +- {res['Optimal_test'][1]:.4f}")
+    
+    
+    #print("Start square expected turns (theory / empirical +- stderr)")
+    #print(f"optimal: {res['Optimal_theoretical']:.4f} / {res['Optimal_test'][0]:.4f} +- {res['Optimal_test'][1]:.4f}")
     for dice_id in (1, 2, 3, 4):
         th = res[f'dice_{dice_id}_theoretical']
         emp, se = res[f'dice_{dice_id}_test']
-        if th == "DNF":
-            print(f"dice {dice_id} only: DNF / DNF +- NA")
-        else:
-            print(f"dice {dice_id} only: {th:.4f} / {emp:.4f} +- {se:.4f}")
+        # if th == "DNF":
+        #     print(f"dice {dice_id} only: DNF / DNF +- NA")
+        # else:
+        #     print(f"dice {dice_id} only: {th:.4f} / {emp:.4f} +- {se:.4f}")
     emp, se = res['Uniform_random_test']
-    if emp == "DNF":
-        print(f"uniform random: DNF / DNF +- NA")
-    else:
-        print(
-            f"uniform random: {res['Uniform_random_theoretical']:.4f} / {emp:.4f} +- {se:.4f}"
-            )
+    # if emp == "DNF":
+    #     print(f"uniform random: DNF / DNF +- NA")
+    # else:
+    #     print(
+    #         f"uniform random: {res['Uniform_random_theoretical']:.4f} / {emp:.4f} +- {se:.4f}"
+    #         )
     
 
     return res
@@ -521,9 +525,9 @@ Extra strat? Like safe -> risky ? Or risky -> safe (like when you arrive close t
 
 Experiments we could do :
 
-Take no traps layout, the evil fast lane layout and maybe an other with traps just before the fast lane. We could compare if the optimal policy takes some aggressive choice of dice around square 3 or not (like to be sure to NOT go on the evil lane,...).
-
-
+Take no traps layout, the evil fast lane layout and maybe an other with traps just before the fast lane. 
+We could compare if the optimal policy takes some aggressive choice of dice around square 3 or not 
+(like to be sure to NOT go on the evil lane,...).
 
 """
 
