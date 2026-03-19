@@ -52,7 +52,52 @@
 This project is about the implementation of a Markov Decision Process to solve a Snakes and Ladders game. To do so, we implemented the value iteration algorithm to find the optimal policy for the game. Afterwards, we compared this optimal policy to other suboptimal policies to see how they perform in terms of expected number of turns to win the game. 
 \section*{Theoretical background}
 \section*{Implementation description}
+
+\subsection*{Trap layouts}
+
+We chose to use 6 different trap layouts to compare the optimal policy in different settings. These layouts are the following :
+\begin{itemize}
+    \item \textbf{No traps}: this layout has no traps, which means that the player can only move forward and never go back. This is the simplest layout and serves as a baseline for comparison.
+    \item \textbf{Few traps}: this layout has a few traps scattered throughout the board.
+    \item \textbf{Many traps}: this layout has many traps scattered throughout the board, which makes it more difficult to win the game.
+    \item \textbf{Evil fast lane}: this layout has traps only on the fast lane.
+    \item \textbf{Two-in-a-row traps}: this layout has two-times two traps in a row, which makes it more difficult to avoid them.
+    \item \textbf{Back-to-three traps}: this layout has traps that send the player back to tile 3, which is the branching tile.
+
+\end{itemize}
+
+\subsection*{Sub-optimal strategies}
+\noindent We chose to implement five sub-optimal strategies to compare with the optimal policy. These strategies are the following :
+\begin{itemize}
+
+    \item \textbf{One dice only}: for each of the 4 dices, we made a policy that always chooses that dice. This gives us 4 sub-optimal policies to compare with the optimal one.
+    \item \textbf{Uniform random strategy}: this policy chooses a dice uniformly at random, independently of the current tile. This is a baseline strategy.
+
+\end{itemize}
+
+
 \section*{Results}
+We compared the optimal policy with the 5 sub-optimal strategies by simulating 1000 games for each policy and game structure (circle or not) and computing the average number of turns to win the game, i.e. the expected number of turns needed to reach tile 15 from tile 1. The results are summarized in the following tables, where ach table corresponds to a different trap layout. \\
+First, the baseline trap layout with no traps :
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|c|}
+    \hline
+    Strategy & Circle & Linear \\
+    \hline
+    Optimal &  &  \\
+    Dice 1 Only &  &  \\
+    Dice 2 Only &  &  \\
+    Dice 3 Only &  &  \\
+    Dice 4 Only &  &  \\
+    Uniform Random &  &  \\
+    \hline
+    \end{tabular}
+\caption{Comparison of Strategies for the No Traps Layout}
+\end{table}
+% We should then do one table per trap layout which seems huge, idk if you have another idea to present the results in a more concise way ?
+
 \section*{Conclusion}
 
 \end{document}

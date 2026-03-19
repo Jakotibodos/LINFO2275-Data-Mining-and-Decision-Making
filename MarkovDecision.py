@@ -414,7 +414,7 @@ def markovDecision(layout, circle):
 def policy_uniform_random(): # Policy purely random choice of dice
     return lambda: np.random.choice([1,2,3,4])
 
-def compare_strategies(layout, circle, n_games = 5000):
+def compare_strategies(layout, circle, n_games = 1000):
     optimal_results = markovDecision(layout, circle)
     opt_cost = optimal_results[0]
     opt_policy = optimal_results[1]
@@ -459,17 +459,35 @@ circle = False
 #markovDecision([3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],True)
 # out = markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],False)
 # out = markovDecision([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],True)
-trap = []
-trap.append(int(np.random.choice([0,3]))) # Not meaningful to have traps of type 1 or 2 on the first tile (so only 0 or 3)
-for i in range(1,14):
-    trap.append(np.random.randint(0,4)) # We need to make this more restrictive as for some layouts and some suboptimal policies (see example on whatsapp)
-trap.append(0) # Not meaningful to have traps on last tile as we won the game no matter what
-print("Trap layout:", trap)
+
+
+# Random layouyts :
+# trap = []
+# trap.append(int(np.random.choice([0,3]))) # Not meaningful to have traps of type 1 or 2 on the first tile (so only 0 or 3)
+# for i in range(1,14):
+#     trap.append(np.random.randint(0,4)) # We need to make this more restrictive as for some layouts and some suboptimal policies (see example on whatsapp)
+# trap.append(0) # Not meaningful to have traps on last tile as we won the game no matter what
+# print("Trap layout:", trap)
 
 #trap = [3,2,1,2,0,0,0,0,3,2,1,1,1,3,0]
+#trap = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 3, 1, 0]
 
-out = markovDecision(trap, False)
-compare_strategies(trap, False)
+traps = {
+    "no_trap_layout": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    "few_traps_layout": [0,0,3,0,0,0,3,0,0,0,0,3,0,0,0],
+    "many_traps_layout": [0, 0, 1, 1, 3, 2, 1, 3, 2, 1, 1, 0, 1, 1, 0],
+    "two_in_a_row_layout": [0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0],
+    "evil_fast_lane_layout": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 3, 1, 0],
+    "back_to_3_layout": [0,0,0,0,0,2,0,0,0,1,0,0,2,0,0],
+}
+for name, trap in traps.items():
+    print(f"Testing layout: {name} with no circle")
+    # out = markovDecision(trap, False)
+    compare_strategies(trap, False)
+    print("\n\n")
+    print(f"Testing layout: {name} with circle")
+    # out = markovDecision(trap, True)
+    compare_strategies(trap, True)
 
 #Example of a run :
 #Trap layout: [0, 3, 1, 3, 1, 0, 3, 1, 3, 2, 3, 1, 3, 0, 0], n_games = 5000
@@ -498,5 +516,14 @@ game = Game(generate_board([0,0,0,0,0,2,0,0,0,1,0,0,2,0,0],False))
 game.print_board()
 """
 
+"""
+Extra strat? Like safe -> risky ? Or risky -> safe (like when you arrive close to the goal tile, you take safer dices, but I do not know if that is notalready the optimal strategy, and maybe we should use the current tile more.)
 
+Experiments we could do :
+
+Take no traps layout, the evil fast lane layout and maybe an other with traps just before the fast lane. We could compare if the optimal policy takes some aggressive choice of dice around square 3 or not (like to be sure to NOT go on the evil lane,...).
+
+
+
+"""
 
