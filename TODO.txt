@@ -20,8 +20,18 @@
 	- Visualisation
 
 - Report (6 pages max)
-	- Intro
-	- theoretical explanation of method
-	- Short description of implementation
+	- Intro (TO REVIEW BY BOYS)
+	- theoretical explanation of method (TO REVIEW BY BOYS)
+	- Short description of implementation (TODO)
 	- Comparison theoretical and empirical results
-	- conclusion
+	- conclusion (TODO)
+
+
+
+- Questions
+	- Extra strategy? Like safe -> risky ? Or risky -> safe (like when you arrive close to the goal tile, you take safer dices, but I do not know if that is notalready the optimal strategy, and maybe we should use the current tile more.)
+	- Do we put the equations in the theoretical explanation? -> In the pitfalls, they talk about equations so maybe we should.
+	- If we have time, do we try Q-Learning?
+	- Do we add the numbers in the results (like in summary.csv), or only the figures?
+	- Maybe, we could add on Gavin's figures the expected number of turns? So everything is in one place?
+	- In the few traps layout, there are only prison traps, maybe (I don't know) should we use few but more aggressive traps? Like restart or penalty, as here the optimal policy is very close to the one with no traps.
