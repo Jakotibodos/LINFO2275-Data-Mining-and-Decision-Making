@@ -18,7 +18,7 @@ trapLayouts = {
 
 
 # draws one game board with node shapes and dice-policy colors
-def drawSingleBoard(axis, trapLayout, dicePolicy=None):
+def drawSingleBoard(axis, trapLayout, dicePolicy=None, stateValues=None):
     tileShapeMap = {0: 's', 1: 'o', 2: '<', 3: '8'}
 
     diceColorMap = {
@@ -81,11 +81,20 @@ def drawSingleBoard(axis, trapLayout, dicePolicy=None):
             ax=axis
         )
 
+    if stateValues is None:
+        labels = {n: n for n in nodePositions}
+    else:
+        fullValues = list(stateValues) + [0.0]
+        labels = {}
+        for n in nodePositions:
+            tileIndex = int(n) - 1
+            labels[n] = f"{fullValues[tileIndex]:.1f}"
+
     nx.draw_networkx_labels(
         graph,
         nodePositions,
-        labels={n: n for n in nodePositions},
-        font_size=18,
+        labels=labels,
+        font_size=15,
         font_color='white',
         font_weight='normal',
         ax=axis
@@ -256,7 +265,15 @@ def drawKey(axis):
 
 
 # draws the full figure with two boards and the shared key
-def drawLayoutFigure(layoutName, trapLayout, policyCircleTrue, policyCircleFalse, savePath):
+def drawLayoutFigure(
+    layoutName,
+    trapLayout,
+    policyCircleTrue,
+    policyCircleFalse,
+    valuesCircleTrue,
+    valuesCircleFalse,
+    savePath
+):
     figure = plt.figure(figsize=(16.2, 6.9))
 
     gridSpec = figure.add_gridspec(
@@ -273,8 +290,8 @@ def drawLayoutFigure(layoutName, trapLayout, policyCircleTrue, policyCircleFalse
 
     figure.suptitle(layoutName, fontsize=35, fontweight="bold", y=0.955)
 
-    drawSingleBoard(axisTop, trapLayout, policyCircleTrue)
-    drawSingleBoard(axisBottom, trapLayout, policyCircleFalse)
+    drawSingleBoard(axisTop, trapLayout, policyCircleTrue, valuesCircleTrue)
+    drawSingleBoard(axisBottom, trapLayout, policyCircleFalse, valuesCircleFalse)
     drawKey(axisKey)
 
     axisTop.set_title("circle = True", fontsize=20, pad=1)
@@ -304,6 +321,8 @@ def runAll(outputDirectory="mdp_outputs"):
             trapLayout,
             resultsTrue["Optimal_policy"],
             resultsFalse["Optimal_policy"],
+            resultsTrue["Optimal_cost"],
+            resultsFalse["Optimal_cost"],
             os.path.join(outputDirectory, f"{layoutName}.pdf")
         )
 
