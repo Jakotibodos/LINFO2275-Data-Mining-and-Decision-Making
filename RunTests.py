@@ -9,10 +9,10 @@ from MarkovDecision import compare_strategies
 
 trapLayouts = {
     "no_trap_layout": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    "few_traps_layout": [0,0,3,0,0,0,3,0,0,0,0,3,0,0,0],
+    "few_traps_layout": [0,0,2,0,0,0,2,0,0,0,0,2,0,0,0],
     "many_traps_layout": [0, 0, 1, 1, 3, 2, 1, 3, 2, 1, 1, 0, 1, 1, 0],
-    "two_in_a_row_layout": [0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0],
-    "evil_fast_lane_layout": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 3, 1, 0],
+    "two_in_a_row_layout": [0, 2, 2, 0, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0],
+    "evil_fast_lane_layout": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 0],
     "back_to_3_layout": [0,0,0,0,0,2,0,0,0,1,0,0,2,0,0],
 }
 

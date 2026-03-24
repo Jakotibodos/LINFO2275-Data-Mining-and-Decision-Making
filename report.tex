@@ -148,7 +148,7 @@ We chose to use 6 different trap layouts to compare the optimal policy in differ
 % \caption{Comparison of Strategies for the No Traps Layout}
 % \end{table}
 % We should then do one table per trap layout which seems huge, idk if you have another idea to present the results in a more concise way ?
-\subsection*{Theoretical vs Empirical Results: Optimal Strategy}
+\subsection*{Results: Optimal Policy}
 
 \begin{figure}[H]
     \centering
@@ -169,6 +169,62 @@ We find it surprising that tile 3 itself does not favor the special die, as it c
 
 \begin{figure}[H]
     \centering
+    \includegraphics[width=0.99\linewidth]{mdp_outputs/few_traps_layout.pdf}
+    \caption{Expected number of turns to win the game for the few traps layout.}
+    \label{fig:few_traps_layout}
+\end{figure}
+
+\noindent \autoref{fig:few_traps_layout} adds a few penalty traps into the layout. We see some recurring patterns like choosing safer dice close to the goal for the looped layout and prioritizing the risky dice in safer regions.
+On most trapped tiles, the optimal policy chooses the risky die even with the 1/4 chance of activating the trap.
+Since penalty traps effectively act as -3 rolls when starting on them, the risky die has an expected value of \frac{3}{4}, which is still higher than the safe and normal dice (\frac{1}{2}). 
+More interestingly, the optimal strategy clearly tries to avoid the traps when it can. For example, it chooses the normal die on tile for 4 to get closer to the trapped tile 7 until it is close enough (on tile 5 or 6) to be able to leap over the trap using the special die.
+
+The non-looped layout prioritizes heavily taking the fast lane, as seen by the choice of the safe die on tile 2. Even if taking the fast lane is not guaranteed, if there is even a slight chance of going there, it takes it.
+In practice, the player will only rarely take the fast lane with this policy since the only way to end on tile 2 is to roll a -3 when standing on tile 5. Still, when it happens, it is a huge speedup.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.99\linewidth]{mdp_outputs/many_traps_layout.pdf}
+    \caption{Expected number of turns to win the game for the many-trap layout.}
+    \label{fig:many_traps_layout}
+\end{figure}
+As see in \autoref{fig:many_traps_layout}, having many traps unsurprisingly leads to the near exclusive use of the safe die.
+As the safe die moves the player by at most 1 tile, having the layout loop or not doesn't affect the optimal policy choice or its effectiveness. 
+This is further shown by comparing to the only die 1 strategy, which takes almost the same number of turns as the optimal strategy.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.99\linewidth]{mdp_outputs/evil_fast_lane_layout.pdf}
+    \caption{Expected number of turns to win the game for the evil fast lane layout.}
+    \label{fig:evil_fast_lane_layout}
+\end{figure}
+\noindent When designing the "evil fast lane" layout seen in \autoref{fig:evil_fast_lane_layout}, we expected the optimal policy to avoid the fast lane at all costs. However, that is not what we observe, as the choice of the special die at tile 7 for the looped layout and tile 4 for the non-looped layout may directly lead the player to land on tile 3 and merge into the fast lane.
+This is an acceptable outcome for the model, since rolling a 5 with the special die from tile 3 would lead directly to the goal tile when taking the fast lane.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.99\linewidth]{mdp_outputs/two_in_a_row_layout.pdf}
+    \caption{Expected number of turns to win the game for the two-in-a-row traps layout.}
+    \label{fig:two_in_a_row_traps_layout}
+\end{figure}
+In the layout shown in \autoref{fig:two_in_a_row_traps_layout}, we observe a drastic difference in strategy between the looped and unlooped boards. In the looped board, the player tries to leap the traps, but only from tiles that guarantee it can land on or before the goal if it rolls a 5, as shown by the choice of the special die on tiles 5 and 6. However, in the unlooped layout, the player prefers inching closer using the normal die, even risking the activation of the trap on tiles 8, 13 and 14, so that a 3 or a 5 on the special die makes it reach the goal (skipping over the 2 traps in a row).
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.99\linewidth]{mdp_outputs/back_to_3_layout.pdf}
+    \caption{Expected number of turns to win the game for the back-to-three traps layout.}
+    \label{fig:back_to_three_layout}
+\end{figure}
+In the back-to-3 layout shown in \autoref{fig:back_to_three_layout}, the optimal strategy becomes much more sophisticated. In the looped layout, the player would much rather take the fast lane (as evidenced by the choice of the safe die on tile 2) since it avoids having to tiptoe past the restart trap on tile 10.
+Surprisingly, the optimal strategy chooses the risky die at tile 8, risking triggering the restart trap. It appears that the risk of restarting is worth taking over moving slowly (with the safe die) to the goal.
+The player in the non-looped layout doesn't benefit as much from the fast lane, as it can simply leap over tile 10 to reach the goal with the special die.
+
+\subsection*{Theoretical vs Empirical Results: Sub-optimal Strategies}
+We compared the optimal policy with the 5 sub-optimal strategies by simulating 1000 games for each policy and game structure (circle or not) and computing the average number of turns to win the game, i.e. the expected number of turns needed to reach tile 15 from tile 1. For each trap layout, we represented the game and the optimal policy by coloring the tiles according to the dice that should be used on that tile. 
+
+\begin{figure}[H]
+    \centering
     \includegraphics[width=0.99\linewidth, trim={40pt 40pt 40pt 20pt}]{plots/no_trap_layout_circle.png}
     \includegraphics[width=0.99\linewidth, trim={40pt 40pt 20pt 30pt}]{plots/no_trap_layout_not_circle.png}
     \caption{Expected vs Average simulated number of turns to win by strategy for No Traps Layout}
@@ -180,13 +236,6 @@ For the non-circle layout, the advantage is less significant, since repeatedly r
 Note that for all layouts, looped or not, the "safe die only" strategy has an expected number of turns of 17. This value remains the same, as the safe die never triggers any traps and can move the player at most 1 tile, never overstepping the goal.
 
 
-\textbf{MAY WANT TO CHANGE THIS PART}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.99\linewidth]{mdp_outputs/few_traps_layout.pdf}
-    \caption{Expected number of turns to win the game for the few traps layout.}
-    \label{fig:few_traps_layout}
-\end{figure}
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.99\linewidth, trim={40pt 40pt 40pt 20pt}]{plots/few_traps_layout_circle.png}
@@ -194,17 +243,8 @@ Note that for all layouts, looped or not, the "safe die only" strategy has an ex
     \caption{Expected vs Average simulated number of turns to win by strategy for Few Traps Layout}
     \label{fig:few_traps_layout_strategies}
 \end{figure}
-\noindent \autoref{fig:few_traps_layout} is more interesting as the game is more complex with the presence of traps. We can see that the optimal policy is again different in the two structures.
-% See comment in TODO
+Comparing the optimal policy to other strategies for the few-trap layout, we observe mostly the same trends as with no traps. However, since the use of riskier dice is now punished, the strategies solely using them are worse, digging the optimal policy's lead even further. 
 
-
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.99\linewidth]{mdp_outputs/many_traps_layout.pdf}
-    \caption{Expected number of turns to win the game for the many traps layout.}
-    \label{fig:many_traps_layout}
-\end{figure}
 
 \begin{figure}[H]
     \centering
@@ -213,18 +253,10 @@ Note that for all layouts, looped or not, the "safe die only" strategy has an ex
     \caption{Expected vs Average simulated number of turns to win by strategy for Many Traps Layout}
     \label{fig:many_traps_layout_strategies}
 \end{figure}
-As see in \autoref{fig:many_traps_layout}, having many traps unsurprisingly leads to the near exclusive use of the safe die.
-As the safe die moves the player by at most 1 tile, having the layout loop or not doesn't affect the optimal policy choice or its effectiveness. 
-This is further shown by comparing to the only die 1 strategy, which takes almost the same number of turns as the optimal strategy.
 
+As expected, since the optimal policies mainly use the safe die, its performance is comparable to the "safe die only" strategy. All other strategies, especially the "risky die only" strategy, are penalized heavily by the traps.
+The "special die only" strategy performs a little bit better, however, since it can leap over multiple traps in a single roll, and the traps don't activate in a chain.
 
-\textbf{MIGHT WANT TO REDO THE EVIL FAST LANE WITH ONLY RESTART TRAPS}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.99\linewidth]{mdp_outputs/evil_fast_lane_layout.pdf}
-    \caption{Expected number of turns to win the game for the evil fast lane layout.}
-    \label{fig:evil_fast_lane_layout}
-\end{figure}
 \begin{figure}
     \centering
     \includegraphics[width=0.99\linewidth, trim={40pt 40pt 40pt 20pt}]{plots/evil_fast_lane_layout_circle.png}
@@ -232,15 +264,7 @@ This is further shown by comparing to the only die 1 strategy, which takes almos
     \caption{Expected vs Average simulated number of turns to win by strategy for evil fast lane Layout}
     \label{fig:evil_fast_lane_layout_strategies}
 \end{figure}
-
-\noindent \autoref{fig:evil_fast_lane_layout} 
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.99\linewidth]{mdp_outputs/two_in_a_row_layout.pdf}
-    \caption{Expected number of turns to win the game for the two-in-a-row traps layout.}
-    \label{fig:two_in_a_row_traps_layout}
-\end{figure}
+The comparisons in \autoref{fig:evil_fast_lane_layout_strategies} continue to show the dominance of the optimal strategy, with the number of turns taken by all strategies closely following that of the no-trap layout. 
 
 
 
@@ -252,15 +276,10 @@ This is further shown by comparing to the only die 1 strategy, which takes almos
     \label{fig:two_in_a_row_traps_layout_strategies}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.99\linewidth]{mdp_outputs/back_to_3_layout.pdf}
-    \caption{Expected number of turns to win the game for the back-to-three traps layout.}
-    \label{fig:back_to_three_layout}
-\end{figure}
-In the back-to-3 layout shown in \autoref{fig:back_to_three_layout}, the optimal strategy becomes much more sophisticated. In the looped layout, the player would much rather take the fast lane (as evidenced by the choice of the safe die on tile 2) since it avoids having to tiptoe past the restart trap on tile 10.
-Surprisingly, the optimal strategy chooses the risky die at tile 8, risking triggering the restart trap. It appears that the risk of restarting is worth taking over moving slowly (with the safe die) to the goal.
-The player in the non-looped layout doesn't benefit as much from the fast lane, as it can simply leap over tile 10 to reach the goal with the special die.
+Looking at the comparisons in \autoref{fig:two_in_a_row_traps_layout_strategies}, we find that the risky die is heavily penalized if misused, since the chance of trap activation is much higher.
+Surprisingly, for the looped version, the "only special die" strategy performs better on this layout than on the no-trap layout. This is due to the trap on tile 9, which if activated, leads the player back to tile 6, from which a roll of 5 directly lands on the goal. Compare that to the no-trap layout, where landing on tile 9 would mean a roll of 3 or 5 overshoots the goal and a roll of -1 or -3 moves the player back (like a trap) but consumes an extra turn (unlike a trap).
+
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.99\linewidth, trim={40pt 40pt 40pt 20pt}]{plots/back_to_3_layout_circle.png}
@@ -270,8 +289,7 @@ The player in the non-looped layout doesn't benefit as much from the fast lane, 
 \end{figure}
 Again, the optimal policy outperforms all other strategies. Having the layout loop or not clearly affects how risk-averse the player can be, as the risky die and the special die policies are nearly twice and thrice as fast, respectively.
 
-\subsection*{Theoretical vs Empirical Results: Sub-optimal Strategies}
-We compared the optimal policy with the 5 sub-optimal strategies by simulating 1000 games for each policy and game structure (circle or not) and computing the average number of turns to win the game, i.e. the expected number of turns needed to reach tile 15 from tile 1. For each trap layout, we represented the game and the optimal policy by coloring the tiles according to the dice that should be used on that tile. 
+
 
 
 \section*{Conclusion}
