@@ -288,7 +288,8 @@ def drawLayoutFigure(
     axisBottom = figure.add_subplot(gridSpec[1, 0])
     axisKey = figure.add_subplot(gridSpec[:, 1])
 
-    figure.suptitle(layoutName, fontsize=35, fontweight="bold", y=0.955)
+    title = layoutName.replace("_", " ").title()
+    figure.suptitle(title, fontsize=35, fontweight="bold", y=0.955)
 
     drawSingleBoard(axisTop, trapLayout, policyCircleTrue, valuesCircleTrue)
     drawSingleBoard(axisBottom, trapLayout, policyCircleFalse, valuesCircleFalse)

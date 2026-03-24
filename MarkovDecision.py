@@ -399,7 +399,7 @@ def markovDecision(layout, circle):
         #     print(f"iter={it} in markov decision, err={err}")
         if np.max(np.abs(newV - V)) < stability_tol: # Here, we need to check the global convergence of the whole states, not just one state.
             V = newV
-            #print("Convergence achieved after", it+1, "iterations.")
+            # print("Convergence achieved after", it+1, "iterations.")
             break
 
         V = np.copy(newV)
