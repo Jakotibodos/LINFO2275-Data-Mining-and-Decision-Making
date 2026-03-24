@@ -176,7 +176,7 @@ We find it surprising that tile 3 itself does not favor the special die, as it c
 
 \noindent \autoref{fig:few_traps_layout} adds a few penalty traps into the layout. We see some recurring patterns like choosing safer dice close to the goal for the looped layout and prioritizing the risky dice in safer regions.
 On most trapped tiles, the optimal policy chooses the risky die even with the 1/4 chance of activating the trap.
-Since penalty traps effectively act as -3 rolls when starting on them, the risky die has an expected value of \frac{3}{4}, which is still higher than the safe and normal dice (\frac{1}{2}). 
+Since penalty traps effectively act as -3 rolls when starting on them, the risky die has an expected value of $\frac{3}{4}$, which is still higher than the safe and normal dice ($\frac{1}{2}$). 
 More interestingly, the optimal strategy clearly tries to avoid the traps when it can. For example, it chooses the normal die on tile for 4 to get closer to the trapped tile 7 until it is close enough (on tile 5 or 6) to be able to leap over the trap using the special die.
 
 The non-looped layout prioritizes heavily taking the fast lane, as seen by the choice of the safe die on tile 2. Even if taking the fast lane is not guaranteed, if there is even a slight chance of going there, it takes it.
