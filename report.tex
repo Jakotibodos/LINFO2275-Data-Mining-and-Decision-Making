@@ -28,7 +28,6 @@
 \renewcommand{\labelitemi}{$-$}
 \renewcommand{\labelitemii}{$\circ$}
 
-% \bibliographystyle{alpha}
 
 \begin{document}
 %%%%%%%%%%% TITLE %%%%%%%%%%%%%%%%%
@@ -77,14 +76,14 @@ Academic year 2025-2026 \hspace*{\stretch{0.75}} Ecole Polytechnique de Louvain\
 \newpage
 %%%%%%%%%%% END TITLE %%%%%%%%%%%%%
 \section*{Introduction}
-In this project, we present the implementation of a Markov Decision Process to solve a Snakes and Ladders game. To do so, we implemented the value iteration algorithm to find the optimal policy for the game. This policy specifies, for each tile, the best dice to use in order to minimize the expected number of turns to reach the goal (tile 15). Indeed, the player may choose between four different dices at each turn, each with some probabilities of moves and traps triggering. There are two game configurations considered: one circular (must stop on tile \texttt{15} exactly) and a linear (must only reach tile \texttt{15}). Afterwards, we compared this optimal policy to other suboptimal policies, such as fixed-dice policies, to see how they perform in terms of expected number of turns to win the game. Both theoretical results from value iteration and empirical results from Monte Carlo simulations are analyzed, presented and compared across different trap layouts, for both game configurations.
+In this project, we present the implementation of a Markov Decision Process to solve a Snakes and Ladders game. To do so, we implemented the value iteration algorithm to find the optimal policy for the game \autocite{kochenderfer2022adm}. This policy specifies, for each tile, the best dice to use in order to minimize the expected number of turns to reach the goal (tile 15). Indeed, the player may choose between four different dices at each turn, each with some probabilities of moves and traps triggering. There are two game configurations considered: one circular (must stop on tile \texttt{15} exactly) and a linear (must only reach tile \texttt{15}). Afterwards, we compared this optimal policy to other suboptimal policies, such as fixed-dice policies, to see how they perform in terms of expected number of turns to win the game. Both theoretical results from value iteration and empirical results from Monte Carlo simulations are analyzed, presented and compared across different trap layouts, for both game configurations.
 
 %\noindent To compare our theoretical results from value iteration with empirical results, we used Monte Carlo simulations. We simulated a large number of games using the optimal policy and computed the average number of turns to win the game, which should be close to the expected number of turns computed by value iteration. We also compared the optimal policy with sub-optimal policies by simulating games using those policies and computing their average number of turns to win the game.
 
 
 \section*{Theoretical background}
 
-The game is modeled as a Markov Decision Process. As seen during the lectures, it is defined by 
+The game is modeled as a Markov Decision Process. As seen during the lectures, it is defined by \autocite{brandimarte2021shortest}
 \begin{itemize}
     \item a finite set of states $S$, which in our case corresponds to the tiles of the board, i.e. $S = \{1, 2, \dots, 15\}$;
     \item a set of actions $A$, which corresponds to the choice of dice to roll, i.e. $A = \{1, 2, 3, 4\}$;
@@ -93,9 +92,9 @@ The game is modeled as a Markov Decision Process. As seen during the lectures, i
 \end{itemize}
 
 \noindent The goal is to find an optimal policy $\pi^*$ specifying, at each tile, which dice minimizes the expected number of turns to reach tile \texttt{15} from any initial state. Let $V(s)$ be this total expected number of turns which respects Bellman's equation with as condition $V(15)=0$:
-\begin{equation}
+\begin{equation*}
     V(s) = \min_{a \in A} \left[ c(s \mid a) + \sum_{s' \in S} P(s' \mid s, a) V(s') \right]
-\end{equation}
+\end{equation*}
 
 
 \noindent This optimal expected number of turns can be computed using the value iteration algorithm, which iteratively updates $V(s)$ for each state until convergence. The optimal policy is then obtained by selecting, for each state, the action that minimizes the Bellman equation. \\
@@ -119,7 +118,7 @@ We chose to use 6 different trap layouts to compare the optimal policy in differ
     \item \textbf{Few traps}: this layout has a few traps teleporting the player three squares backward scattered throughout the board.
     \item \textbf{Many traps}: this layout has many traps of all types scattered throughout the board, which makes it more difficult to win the game.
     \item \textbf{Evil fast lane}: this layout has restart and backward traps only on the fast lane.
-    \item \textbf{Two-in-a-row traps}: this layout presents two segments with two consecutive backward trap tiles, making it more difficult to avoid them.
+    \item \textbf{Two-in-a-row traps}: this layout presents three segments with two consecutive backward trap tiles, making it more difficult to avoid them.
     \item \textbf{Back-to-three traps}: this layout has traps that send the player back to tile \texttt{3}, which is the branching tile.
 
 \end{itemize}
@@ -128,7 +127,7 @@ We chose to use 6 different trap layouts to compare the optimal policy in differ
 \noindent We chose to implement five sub-optimal strategies to compare with the optimal policy. These strategies are the following :
 \begin{itemize}
 
-    \item \textbf{One dice only}: for each of the 4 dices, this policy simply chooses one specific dice. This gives us 4 sub-optimal policies to compare with the optimal one.
+    \item \textbf{One dice only}: for each of the 4 dices, this policy simply uses one specific dice. This gives us 4 sub-optimal policies to compare with the optimal one.
     \item \textbf{Uniform random strategy}: this policy chooses a dice uniformly at random, independently of the current tile. This is a baseline strategy.
 
 \end{itemize}
@@ -161,13 +160,13 @@ For each trap layout defined above, we represented the game and the optimal poli
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.99\linewidth]{mdp_outputs/no_trap_layout.pdf}
-    \caption{Expected number of turns to win the game from each tile for the no traps layout. The tile color represents the optimal policy obtained through value iteration. }
+    \caption{Expected number of turns to win the game from each tile for the no traps layout.}
     \label{fig:no_trap_layout}
 \end{figure}
 
 \noindent\autoref{fig:no_trap_layout} shows the optimal policy in the case where no traps are present, in both the circular and linear game structures. For tiles closer to the goal, the circle structure favors safer dice as we must stop exactly on the goal, while the linear structure favors faster dices as we can overshoot the goal. 
 Indeed, since moving back to tile \texttt{1} is always a bad outcome, which is the case in overshoot, the optimal policy will always choose dice \texttt{1} (the safe dice) on both possible last tiles when the layout is circular, regardless of the trap layout. 
-For the rest of the tiles, the policy mostly favors dice \texttt{3}, as it has the highest expected value (\texttt{1.5}) of displacement of all dice, when traps are not triggered. This confirms that, when no penalties are present, the best strategy is to take as much risk as possible to get to the goal faster. Dice \texttt{4} (the special dice) is chosen on tile \texttt{1}, since the player cannot move further back, bringing the expected value of the dice to \texttt{2}. Tiles \texttt{4} and \texttt{6} also favor the special dice, since there is a 1/4 chance to move back directly to tile \texttt{3} and potentially move to the fast lane. 
+For the rest of the tiles, the policy mostly favors dice \texttt{3}, as it has the highest expected value (\texttt{1.5}) of displacement of all dices, when traps are not triggered. This confirms that, when no penalties are present, the best strategy is to take as much risk as possible to get to the goal faster. Dice \texttt{4} (the special dice) is chosen on tile \texttt{1}, since the player cannot move further back, bringing the expected value of the dice to \texttt{2}. Tiles \texttt{4} and \texttt{6} also favor the special dice, since there is a $\frac{1}{4}$ chance to move back directly to tile \texttt{3} and potentially move to the fast lane. 
 We find it surprising that tile \texttt{3} itself does not favor the special dice, as it could directly land on the goal tile.
 
 \begin{figure}[H]
@@ -224,7 +223,7 @@ Surprisingly, the optimal strategy chooses the risky dice at tile \texttt{8}, ri
 The player in the non-looped layout does not benefit as much from the fast lane, as it can simply leap over tile \texttt{10} to reach the goal with the special dice.
 
 \subsection*{Theoretical vs Empirical Results: Sub-optimal Strategies}
-We compared the optimal policy with the 5 sub-optimal strategies by simulating \texttt{1000} games for each policy and game structure (circle or not) with Monte Carlo simulations. We also included the theoretical expected number of turns, $V(1)$, for each strategy computed by value iteration. In all experiments, empirical means are very close to the theoretical values, indicating the convergence of the value iteration algorithm. Note that, for some layouts that are not shown in this report, no convergence could be achieved for any strategy (including the optimal one), as the player would get stuck in traps and never reach the goal. This, for example, could happen when restart and penalty traps are present on the four first tiles, as the player will always get teleported back to the start of the board and never reach the goal, leading to an infinite expected number of turns.
+We compared the optimal policy with the 5 sub-optimal strategies by simulating \texttt{1000} games for each policy and game structure (circle or not) with Monte Carlo simulations. We also included the theoretical expected number of turns, $V(1)$, for each strategy computed by value iteration. In all experiments, empirical means are very close to the theoretical values, indicating the convergence of the value iteration algorithm. Note that, for some layouts that are not shown in this report, no convergence could be achieved for any strategy (including the optimal one), as the player would get stuck in traps and never reach the goal. This, for example, could happen when restart and penalty traps are present on the five first tiles, as the player will always get teleported back to the start of the board and never reach the goal, leading to an infinite expected number of turns.
 \\
 \begin{figure}
     \centering
@@ -238,11 +237,11 @@ We compared the optimal policy with the 5 sub-optimal strategies by simulating \
 \noindent\autoref{fig:no_trap_layout_strategies} compares different strategies to the optimal policy in the no-traps layout. 
 
 In the circle layout, the optimal policy far outperforms the other simpler strategies, since using riskier dice first and safer dice near the goal brings a huge advantage to the player.
-For the non-circle layout, the advantage is less significant, since repeatedly rolling dice 3 is nearly the optimal policy anyway.
-Note that for all layouts, looped or not, the \textit{safe dice only} strategy has an expected number of turns of 17. This value remains the same, as the safe dice never triggers any traps and can move the player at most 1 tile, never overstepping the goal.
+For the non-circle layout, the advantage is less significant, since repeatedly rolling dice \texttt{3} is nearly the optimal policy anyway.
+Note that for all layouts, looped or not, the \textit{safe dice only} strategy has an expected number of turns of \texttt{17}. This value remains the same, as the safe dice never triggers any traps and can move the player at most 1 tile, never overstepping the goal.
 \\\\
 
-Comparing the optimal policy to other strategies for the few-trap layout, as seen in \autoref{fig:few_traps_layout_strategies}, we observe mostly the same trends as with no traps. However, since the use of riskier dice is now punished, the strategies solely using them are worse, digging the optimal policy's lead even further. Indeed, a more heterogeneous use of the different dice is required to get a good performance, as the player needs to be able to adapt to the traps and use the safe dice when needed, while still taking risks when it is worth it. The uniform random strategy has worse performance than the optimal policy, but close to all other strategies,
+Comparing the optimal policy to other strategies for the few-trap layout, as seen in \autoref{fig:few_traps_layout_strategies}, we observe mostly the same trends as with no traps. However, since the use of riskier dice is now punished, the strategies solely using them are worse, digging the optimal policy's lead even further. Indeed, a more heterogeneous use of the different dice is required to get a good performance, as the player needs to be able to adapt to the traps and use the safe dice when needed, while still taking risks when it is worth it. The \textit{uniform random} strategy has worse performance than the optimal policy, but close to all other strategies,
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.9\linewidth, trim={40pt 40pt 40pt 20pt}]{plots/few_traps_layout_circle.png}
@@ -283,7 +282,17 @@ The comparisons in \autoref{fig:evil_fast_lane_layout_strategies} continue to sh
 \end{figure}
 
 Looking at the comparisons in \autoref{fig:two_in_a_row_traps_layout_strategies}, we find that the risky dice is heavily penalized if misused, since the chance of trap activation is much higher.
-Surprisingly, for the looped version, the \textit{special dice only} strategy performs better on this layout than on the no-trap layout. This is due to the trap on tile 9, which if activated, leads the player back to tile 6, from which a roll of 5 directly 
+Surprisingly, for the looped version, the \textit{special dice only} strategy performs better on this layout than on the no-trap layout. This is due to the trap on tile \texttt{9}, which if activated, leads the player back to tile \texttt{6}, from which a roll of 5 directly lands on the goal. 
+Compare that to the no-trap layout, where landing on tile \texttt{9} would mean a roll of 3 or 5 overshoots the goal and a roll of -1 or -3 moves the player back (like a trap) but consumes an extra turn (unlike a trap).
+
+
+
+
+\autoref{fig:back_to_three_layout_strategies} shows that having the layout loop or not clearly affects how risk-averse the player can be, as the \textit{risky dice only} and the \textit{special dice only} policies are nearly twice and thrice as fast, respectively.
+
+Overall, value-iteration consistently provides the least number of turns compared to other more naive strategies. 
+It accomplishes this with, at least for this relatively small problem, usually below 50 iterations. In problems with simple models such as this one, a tighter stability tolerance is reasonable given the fast per-iteration calculation time.
+For problems with a high cost per iteration, either computationally or monetarily, a larger stability tolerance could be chosen. 
 
 \begin{figure}[H]
     \centering
@@ -292,24 +301,13 @@ Surprisingly, for the looped version, the \textit{special dice only} strategy pe
     \caption{Expected vs Average simulated number of turns to win by strategy for back-to-three Layout}
     \label{fig:back_to_three_layout_strategies}
 \end{figure}
-
-\noindent lands on the goal. 
-Compare that to the no-trap layout, where landing on tile 9 would mean a roll of 3 or 5 overshoots the goal and a roll of -1 or -3 moves the player back (like a trap) but consumes an extra turn (unlike a trap).
-
-
-
-
-\autoref{fig:back_to_three_layout_strategies} shows that having the layout loop or not clearly affects how risk-averse the player can be, as the \textit{risky dice only} and the \textit{special dice only} policies are nearly twice and thrice as fast, respectively.
+\noindent By selecting a larger stability tolerance, the number of iterations can be decreased in exchange of a suboptimal but quicker to determine policy. This makes value-iteration a flexible tool for dealing with MDPs of all problem sizes. 
+Another factor to consider is problem complexity. For simple cases such as \textit{many-traps} the naive solution performs comparably to the optimal strategy, with no value-iteration step required.
 
 \section*{Conclusion}
-% GAVIN
-Overall, value-iteration consistently provides the least number of turns compared to other more naive strategies. 
-It accomplishes this with, at least for this relatively small problem, usually below 50 iterations. In problems with simple models such as this one, a tighter stability tolerance is reasonable given the fast per-iteration calculation time.
-For problems with a high cost per iteration, either computationally or monetarily, a larger stability tolerance could be chosen. 
-By selecting a larger stability tolerance, the number of iterations can be decreased in exchange of a suboptimal but quicker to determine policy. 
-This makes value-iteration a flexible tool for dealing with MDPs of all problem sizes. 
-Another factor to consider is problem complexity. For simple cases such as "many-traps" the naive solution performs comparably to the optimal strategy, with no value-iteration step required.
 
-%Lore
 Overall, the optimal policy obtained through value iteration consistently outperformed the sub-optimal strategies across all trap layouts and game configurations. The advantage of the optimal policy was particularly significant because of the heterogeneous way to use dices, as using riskier dices in the beginning and safer ones later. The Monte Carlo simulations validated the theoretical results, as the empirical average number of turns closely matched the expected number of turns computed by value iteration for all strategies and layouts. This confirms the correctness of our implementation and the effectiveness of the optimal policy in minimizing the expected number of turns to win the game.
+
+\newpage
+\printbibliography{}
 \end{document}
