@@ -3,8 +3,9 @@
 \usepackage{amsfonts,amsmath,amssymb}
 \DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
 \usepackage[english]{babel}
-\usepackage[style=alphabetic]{biblatex}\addbibresource{references.bib}
+\usepackage[style=alphabetic]{biblatex}\addbibresource{ref.bib}
 \usepackage[font=scriptsize, labelfont=bf]{caption}
+\usepackage[dvipsnames]{xcolor}
 \usepackage{csquotes}
 \usepackage{enumitem}
 \usepackage[a4paper,left=1.5cm,right=1.5cm,top=2.5cm,bottom=2.5cm]{geometry}
@@ -77,6 +78,84 @@ Academic year 2025-2026 \hspace*{\stretch{0.75}} Ecole Polytechnique de Louvain\
 \newpage
 %%%%%%%%%%% END TITLE %%%%%%%%%%%%%
 
+\section{Introduction}
 
+\section{Theoretical Background}
 
+Q-learning is a model-free reinforcement learning algorithm for learning optimal behaviour through interaction with an environment. It is model-free because it does not require a model of the environment, such as the transition probabilities or reward function. Instead, the agent learns from experience, by trying actions and observing the obtained rewards. In the standard formulation, the environment is modelled as a Markov decision process (MDP) defined by:
+\begin{itemize}
+    \item a set of states $\mathcal{S}$,
+    \item a set of actions $\mathcal{A}$,
+    \item a transition probability distribution $p(s',r \mid s,a)$ that gives the probability of transitioning to state $s'$ and receiving reward $r$ after taking action $a$ in state $s$,
+    \item a discount factor $\gamma \in [0,1]$ that determines the importance of future rewards.
+\end{itemize}
+
+At time $t$, the agent observes a state $S_t$, selects an action $A_t$, receives a reward $R_{t+1}$, and moves to a new state $S_{t+1}$. The objective is to learn a policy that maximises the expected return, where the return is the discounted sum of future rewards:
+\[
+G_t = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}.
+\]
+The discount factor $\gamma$ controls how much the agent values future rewards. If $\gamma$ is close to zero, the agent mainly considers immediate rewards. If $\gamma$ is close to one, the agent gives more importance to long-term consequences.
+
+The agent learns by estimating action-values, also called Q-values. A Q-value represents how good it is to take a given action in a given state. More precisely, for a policy $\pi$, the action-value function is defined as
+\[
+q_{\pi}(s,a) =
+\mathbb{E}_{\pi}\left[G_t \mid S_t=s, A_t=a\right],
+\]
+which is the expected return obtained by taking action $a$ in state $s$ and then following policy $\pi$. The goal of Q-learning is to learn the optimal action-value function
+\[
+q_*(s,a) = \max_{\pi} q_{\pi}(s,a),
+\]
+which gives the best expected return achievable from each state-action pair. Once this function is known, the optimal action in a state can be chosen greedily:
+\[
+\pi_*(s) \in \arg\max_a q_*(s,a).
+\]
+
+The optimal Q-values satisfy the Bellman optimality equation:
+\[
+q_*(s,a)
+=
+\sum_{s',r} p(s',r \mid s,a)
+\left[
+r + \gamma \max_{a'} q_*(s',a')
+\right].
+\]
+This equation expresses a recursive idea: the value of taking action $a$ in state $s$ is the immediate reward plus the discounted value of the best possible action in the next state. Q-learning uses this idea directly, but without needing to know the transition probabilities. Instead of computing the expectation exactly, it updates the Q-values from sampled transitions experienced by the agent \autocite{sutton2018reinforcement}.
+
+In the tabular version of Q-learning, the agent stores one value $Q(s,a)$ for each state-action pair. After observing a transition
+\[
+(S_t,A_t,R_{t+1},S_{t+1}),
+\]
+the Q-value is updated as follows:
+\[
+Q(S_t,A_t)
+\leftarrow
+Q(S_t,A_t)
++ \\
+\alpha
+\left[
+R_{t+1}
++
+\gamma \max_{a'} Q(S_{t+1},a')
+-
+Q(S_t,A_t)
+\right],
+\]
+where $\alpha \in (0,1]$ is the learning rate. It controls the size of this correction: a large value makes learning faster but less stable, while a small value makes learning slower but smoother.
+
+A common way to select actions during learning is the $\varepsilon$-greedy strategy. With probability $1-\varepsilon$, the agent chooses the action with the highest current Q-value:
+\[
+A_t \in \arg\max_a Q(S_t,a).
+\]
+With probability $\varepsilon$, it chooses a random action. This allows the agent to balance exploitation and exploration. Exploitation means using the current knowledge to choose the best-known action, while exploration means trying other actions in order to discover potentially better strategies. In practice, $\varepsilon$ is often decreased during training, so that the agent explores more at the beginning and exploits more once it has learned useful Q-values \autocite{geeksforgeeks_qlearning}.
+
+Q-learning is an off-policy algorithm. This means that the policy used to choose actions during training does not need to be the same as the policy being learned. For example, the agent may behave according to an $\varepsilon$-greedy policy in order to explore, while the update itself uses the greedy action in the next state through the term
+\[
+\max_{a'} Q(S_{t+1},a').
+\]
+Thus, Q-learning learns the value of the greedy policy even while following an exploratory behaviour policy. This is one of the main differences between Q-learning and on-policy methods such as SARSA \autocite{sutton2018reinforcement}.
+
+Overall, Q-learning is a fundamental reinforcement learning algorithm because it shows how an agent can learn optimal behaviour directly from interaction.
+
+\newpage
+\printbibliography
 \end{document}
