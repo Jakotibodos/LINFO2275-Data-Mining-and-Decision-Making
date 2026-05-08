@@ -45,13 +45,14 @@ class Tetris:
          [7, 7, 7]]
     ]
 
-    def __init__(self, height=20, width=10, block_size=20):
+    def __init__(self, height=20, width=10, block_size=20, use_cnn = False):
         self.height = height
         self.width = width
         self.block_size = block_size
         self.extra_board = np.ones((self.height * self.block_size, self.width * int(self.block_size / 2), 3),
                                    dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
         self.text_color = (200, 20, 220)
+        self.use_cnn = use_cnn #Affects game property 
         self.reset()
 
     def reset(self):
@@ -81,11 +82,18 @@ class Tetris:
         return rotated_array
 
     def get_state_properties(self, board):
-        lines_cleared, board = self.check_cleared_rows(board)
-        holes = self.get_holes(board)
-        bumpiness, height = self.get_bumpiness_and_height(board)
+        if self.use_cnn: #return the board entirely to be looked at by the cnn
+            #Convert the list-based board into a binary float tensor
+            #0 for empty, 1 for any block
+            board_array = np.array(board)
+            board_tensor = np.where(board_array > 0, 1.0, 0.0).astype(np.float32)
+            return torch.from_numpy(board_tensor)
+        else:
+            lines_cleared, board = self.check_cleared_rows(board)
+            holes = self.get_holes(board)
+            bumpiness, height = self.get_bumpiness_and_height(board)
 
-        return torch.FloatTensor([lines_cleared, holes, bumpiness, height])
+            return torch.FloatTensor([lines_cleared, holes, bumpiness, height])
 
     def get_holes(self, board):
         num_holes = 0

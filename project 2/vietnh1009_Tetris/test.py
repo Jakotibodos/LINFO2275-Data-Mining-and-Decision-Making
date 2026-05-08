@@ -17,6 +17,8 @@ def get_args():
     parser.add_argument("--fps", type=int, default=300, help="frames per second")
     parser.add_argument("--saved_path", type=str, default="trained_models")
     parser.add_argument("--output", type=str, default="output.mp4")
+    parser.add_argument("--saved_model", type=str, default="new_model")
+    parser.add_argument("--use_cnn", type=bool, default=False) #was False ADDED
 
     args = parser.parse_args()
     return args
@@ -28,11 +30,11 @@ def test(opt):
     else:
         torch.manual_seed(123)
     if torch.cuda.is_available():
-        model = torch.load("{}/tetris".format(opt.saved_path), weights_only=False)
+        model = torch.load("{}/{}".format(opt.saved_path, opt.saved_model), weights_only=False)
     else:
-        model = torch.load("{}/tetris".format(opt.saved_path), weights_only=False, map_location=lambda storage, loc: storage)
+        model = torch.load("{}/{}".format(opt.saved_path, opt.saved_model), weights_only=False, map_location=lambda storage, loc: storage)
     model.eval()
-    env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size)
+    env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size, use_cnn=opt.use_cnn)
     env.reset()
     if torch.cuda.is_available():
         model.cuda()

@@ -12,6 +12,7 @@ import torch.nn as nn
 from tensorboardX import SummaryWriter
 
 from src.deep_q_network import DeepQNetwork
+from src.cnn_q_network import CnnQNetwork
 from src.tetris import Tetris
 from collections import deque
 
@@ -27,13 +28,14 @@ def get_args():
     parser.add_argument("--gamma", type=float, default=0.99)
     parser.add_argument("--initial_epsilon", type=float, default=1)
     parser.add_argument("--final_epsilon", type=float, default=1e-3)
-    parser.add_argument("--num_decay_epochs", type=float, default=2000)
-    parser.add_argument("--num_epochs", type=int, default=3000)
-    parser.add_argument("--save_interval", type=int, default=1000)
+    parser.add_argument("--num_decay_epochs", type=float, default=300000)#Was 2000
+    parser.add_argument("--num_epochs", type=int, default=300000) #WAS 3000
+    parser.add_argument("--save_interval", type=int, default=50000)
     parser.add_argument("--replay_memory_size", type=int, default=30000,
                         help="Number of epoches between testing phases")
     parser.add_argument("--log_path", type=str, default="tensorboard")
     parser.add_argument("--saved_path", type=str, default="trained_models")
+    parser.add_argument("--use_cnn", type=bool, default=True) #ADDED
 
     args = parser.parse_args()
     return args
@@ -48,15 +50,22 @@ def train(opt):
         shutil.rmtree(opt.log_path)
     os.makedirs(opt.log_path)
     writer = SummaryWriter(opt.log_path)
-    env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size)
+    env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size, use_cnn=opt.use_cnn)
+    
     model = DeepQNetwork()
+    if opt.use_cnn:
+        model = CnnQNetwork()
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
     criterion = nn.MSELoss()
 
     state = env.reset()
     if torch.cuda.is_available():
+        print("CUDA available")
         model.cuda()
         state = state.cuda()
+
+    max_steps_per_episode = 50000 #avoids model getting stuck in training
+    steps_in_episode = 0
 
     replay_memory = deque(maxlen=opt.replay_memory_size)
     epoch = 0
@@ -66,7 +75,7 @@ def train(opt):
         epsilon = opt.final_epsilon + (max(opt.num_decay_epochs - epoch, 0) * (
                 opt.initial_epsilon - opt.final_epsilon) / opt.num_decay_epochs)
         u = random()
-        random_action = u <= epsilon
+        random_action = u <= epsilon 
         next_actions, next_states = zip(*next_steps.items())
         next_states = torch.stack(next_states)
         if torch.cuda.is_available():
@@ -83,7 +92,11 @@ def train(opt):
         next_state = next_states[index, :]
         action = next_actions[index]
 
-        reward, done = env.step(action, render=True)
+        reward, done = env.step(action, render=(epoch%100==1)) #CHANGE TO TRUE TO RENDER 
+        steps_in_episode += 1
+
+        if steps_in_episode >= max_steps_per_episode:
+            done = True
 
         if torch.cuda.is_available():
             next_state = next_state.cuda()
@@ -92,6 +105,7 @@ def train(opt):
             final_score = env.score
             final_tetrominoes = env.tetrominoes
             final_cleared_lines = env.cleared_lines
+            steps_in_episode = 0
             state = env.reset()
             if torch.cuda.is_available():
                 state = state.cuda()
@@ -111,6 +125,8 @@ def train(opt):
             state_batch = state_batch.cuda()
             reward_batch = reward_batch.cuda()
             next_state_batch = next_state_batch.cuda()
+
+        
 
         q_values = model(state_batch)
         model.eval()
@@ -139,9 +155,9 @@ def train(opt):
         writer.add_scalar('Train/Cleared lines', final_cleared_lines, epoch - 1)
 
         if epoch > 0 and epoch % opt.save_interval == 0:
-            torch.save(model, "{}/tetris_{}".format(opt.saved_path, epoch))
+            torch.save(model, "{}/cnn_model_{}".format(opt.saved_path, epoch))
 
-    torch.save(model, "{}/tetris".format(opt.saved_path))
+    torch.save(model, "{}/cnn_model".format(opt.saved_path))
 
 
 if __name__ == "__main__":

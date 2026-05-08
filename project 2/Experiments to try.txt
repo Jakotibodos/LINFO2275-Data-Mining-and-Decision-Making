@@ -1,0 +1,11 @@
+This is for Brainstorming purposes
+
+Bigger and smaller CNNs
+
+Bigger or smaller initial epsilon
+(bigger eps = more exploration)
+
+Bigger smaller gamma 
+(weight discounted future rewards)
+
+Scoring rewards functions (mybe only focus on tetrises)
