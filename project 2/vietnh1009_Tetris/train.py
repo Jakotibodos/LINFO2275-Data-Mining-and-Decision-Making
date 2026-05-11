@@ -28,14 +28,16 @@ def get_args():
     parser.add_argument("--gamma", type=float, default=0.99)
     parser.add_argument("--initial_epsilon", type=float, default=1)
     parser.add_argument("--final_epsilon", type=float, default=1e-3)
-    parser.add_argument("--num_decay_epochs", type=float, default=300000)#Was 2000
+    parser.add_argument("--num_decay_epochs", type=float, default=300000) #Was 2000
     parser.add_argument("--num_epochs", type=int, default=300000) #WAS 3000
     parser.add_argument("--save_interval", type=int, default=50000)
     parser.add_argument("--replay_memory_size", type=int, default=30000,
                         help="Number of epoches between testing phases")
     parser.add_argument("--log_path", type=str, default="tensorboard")
     parser.add_argument("--saved_path", type=str, default="trained_models")
-    parser.add_argument("--use_cnn", type=bool, default=True) #ADDED
+    parser.add_argument("--use_cnn", type=bool, default=True) #was False ADDED
+    parser.add_argument("--model_path", type=str, default="trained_models/cnn_model", help="Path to a saved model to continue training")
+    parser.add_argument("--start_epoch", type=int, default=100000, help="The epoch to start from")
 
     args = parser.parse_args()
     return args
@@ -52,9 +54,15 @@ def train(opt):
     writer = SummaryWriter(opt.log_path)
     env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size, use_cnn=opt.use_cnn)
     
-    model = DeepQNetwork()
-    if opt.use_cnn:
-        model = CnnQNetwork()
+    if opt.model_path and os.path.isfile(opt.model_path):
+        print(f"Loading existing model from {opt.model_path}")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = torch.load(opt.model_path, map_location=device, weights_only=False)
+    else:
+        print("Starting training from scratch")
+        model = DeepQNetwork()
+        if opt.use_cnn:
+            model = CnnQNetwork()
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
     criterion = nn.MSELoss()
 
@@ -68,7 +76,7 @@ def train(opt):
     steps_in_episode = 0
 
     replay_memory = deque(maxlen=opt.replay_memory_size)
-    epoch = 0
+    epoch = opt.start_epoch
     while epoch < opt.num_epochs:
         next_steps = env.get_next_states()
         # Exploration or exploitation
@@ -155,9 +163,9 @@ def train(opt):
         writer.add_scalar('Train/Cleared lines', final_cleared_lines, epoch - 1)
 
         if epoch > 0 and epoch % opt.save_interval == 0:
-            torch.save(model, "{}/cnn_model_{}".format(opt.saved_path, epoch))
+            torch.save(model, "{}/cnn_model_plus_{}".format(opt.saved_path, epoch))
 
-    torch.save(model, "{}/cnn_model".format(opt.saved_path))
+    torch.save(model, "{}/cnn_model_plus".format(opt.saved_path))
 
 
 if __name__ == "__main__":

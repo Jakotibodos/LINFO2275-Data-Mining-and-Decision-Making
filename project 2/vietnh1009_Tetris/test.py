@@ -17,8 +17,8 @@ def get_args():
     parser.add_argument("--fps", type=int, default=300, help="frames per second")
     parser.add_argument("--saved_path", type=str, default="trained_models")
     parser.add_argument("--output", type=str, default="output.mp4")
-    parser.add_argument("--saved_model", type=str, default="new_model")
-    parser.add_argument("--use_cnn", type=bool, default=False) #was False ADDED
+    parser.add_argument("--saved_model", type=str, default="cnn_model")
+    parser.add_argument("--use_cnn", type=bool, default=True) #was False ADDED
 
     args = parser.parse_args()
     return args

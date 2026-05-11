@@ -229,6 +229,7 @@ class Tetris:
 
         lines_cleared, self.board = self.check_cleared_rows(self.board)
         score = 1 + (lines_cleared ** 2) * self.width
+        
         self.score += score
         self.tetrominoes += 1
         self.cleared_lines += lines_cleared
