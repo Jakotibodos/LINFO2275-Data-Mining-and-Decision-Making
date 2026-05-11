@@ -25,11 +25,6 @@
 \usepackage{nicematrix}
 \usepackage{subcaption}
 \usepackage{titling}
-% \usepackage[dvipsnames]{xcolor}
-% \raggedbottom
-% \renewcommand{\labelitemi}{$-$}
-% \renewcommand{\labelitemii}{$\circ$}
-
 
 \begin{document}
 %%%%%%%%%%% TITLE %%%%%%%%%%%%%%%%%
@@ -96,20 +91,16 @@ At time $t$, the agent observes a state $S_t$, selects an action $A_t$, receives
 \[
 G_t = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}.
 \]
-The discount factor $\gamma$ controls how much the agent values future rewards. If $\gamma$ is close to zero, the agent mainly considers immediate rewards. If $\gamma$ is close to one, the agent gives more importance to long-term consequences.
 
 The agent learns by estimating action-values, also called Q-values. A Q-value represents how good it is to take a given action in a given state. More precisely, for a policy $\pi$, the action-value function is defined as
 \[
 q_{\pi}(s,a) =
-\mathbb{E}_{\pi}\left[G_t \mid S_t=s, A_t=a\right],
+\mathbb{E}_{\pi}\left[G_t \mid S_t=s, A_t=a\right].
 \]
-which is the expected return obtained by taking action $a$ in state $s$ and then following policy $\pi$. The goal of Q-learning is to learn the optimal action-value function
+
+The goal of Q-learning is to learn the optimal action-value function
 \[
-q_*(s,a) = \max_{\pi} q_{\pi}(s,a),
-\]
-which gives the best expected return achievable from each state-action pair. Once this function is known, the optimal action in a state can be chosen greedily:
-\[
-\pi_*(s) \in \arg\max_a q_*(s,a).
+q_*(s,a) = \max_{\pi} q_{\pi}(s,a).
 \]
 
 The optimal Q-values satisfy the Bellman optimality equation:
@@ -121,7 +112,6 @@ q_*(s,a)
 r + \gamma \max_{a'} q_*(s',a')
 \right].
 \]
-This equation expresses a recursive idea: the value of taking action $a$ in state $s$ is the immediate reward plus the discounted value of the best possible action in the next state. Q-learning uses this idea directly, but without needing to know the transition probabilities. Instead of computing the expectation exactly, it updates the Q-values from sampled transitions experienced by the agent \autocite{sutton2018reinforcement}.
 
 In the tabular version of Q-learning, the agent stores one value $Q(s,a)$ for each state-action pair. After observing a transition
 \[
@@ -132,7 +122,7 @@ the Q-value is updated as follows:
 Q(S_t,A_t)
 \leftarrow
 Q(S_t,A_t)
-+ \\
++
 \alpha
 \left[
 R_{t+1}
@@ -140,41 +130,31 @@ R_{t+1}
 \gamma \max_{a'} Q(S_{t+1},a')
 -
 Q(S_t,A_t)
-\right],
+\right].
 \]
-where $\alpha \in (0,1]$ is the learning rate. It controls the size of this correction: a large value makes learning faster but less stable, while a small value makes learning slower but smoother.
 
-A common way to select actions during learning is the $\varepsilon$-greedy strategy. With probability $1-\varepsilon$, the agent chooses the action with the highest current Q-value:
-\[
-A_t \in \arg\max_a Q(S_t,a).
-\]
-With probability $\varepsilon$, it chooses a random action. This allows the agent to balance exploitation and exploration. Exploitation means using the current knowledge to choose the best-known action, while exploration means trying other actions in order to discover potentially better strategies. In practice, $\varepsilon$ is often decreased during training, so that the agent explores more at the beginning and exploits more once it has learned useful Q-values \autocite{geeksforgeeks_qlearning}.
-
-Q-learning is an off-policy algorithm. This means that the policy used to choose actions during training does not need to be the same as the policy being learned. For example, the agent may behave according to an $\varepsilon$-greedy policy in order to explore, while the update itself uses the greedy action in the next state through the term
-\[
-\max_{a'} Q(S_{t+1},a').
-\]
-Thus, Q-learning learns the value of the greedy policy even while following an exploratory behaviour policy. This is one of the main differences between Q-learning and on-policy methods such as SARSA \autocite{sutton2018reinforcement}.
-
-Overall, Q-learning is a fundamental reinforcement learning algorithm because it shows how an agent can learn optimal behaviour directly from interaction.
-
+A common way to select actions during learning is the $\varepsilon$-greedy strategy. With probability $1-\varepsilon$, the agent chooses the action with the highest current Q-value, while with probability $\varepsilon$, it chooses a random action.
 
 \section{Implementation }
 
 In this project, the Tetris environment is modeled as a Markov Decision Process (MDP) and solved using Deep Q-Networks (DQN). The implementation bridges the gap between raw game states and the reinforcement learning framework. The game and implementation of DQN are extensions of the work of Viet Nguyen \autocite{tetrisVietnhGithub}.
 
 \subsection{Environment}
+
 Tetris is a game where blocs of differents shapes and sizes appear at the top of a grid board and fall with time. The goal is to place as many blocks as possible without filling in the whole grid. If an entire row is filled when placing a block, that entire row disappears, and the player scores points. The highest number of rows that can be removed at once is 4, and doing so is called a \textit{Tetris}.
 
+Several different reward functions were explored for training the Q-Learning models. For the sake of thoroughness, up to 300,000 epochs per reward scheme were tested, 
+and results for each model trained on 50,000, 100,000, 150,000, 200,000, 250,000, and 300,000 are shown in Figures \ref{fig:blocks}, \ref{fig:lines}, and \ref{fig:clears} in Section 4.2.
 
-\textbf{GAVIN YOU HOULD CHANGE THIS PART}
-The players score points every time a block is placed according to the following formula:
-
-$$\text{score} = 1 + 10\cdot\text{lines\_cleared}^2$$
-
-This score acts as the reward function for the Q-learning models. A penalty of $-2$ is applied if the \texttt{gameover} state is reached to have the agent learn to prolong the game as much as possible.
+The three different reward schemes tested were:
+\begin{itemize}
+    \item \textbf{Lines Flat:} The model receives +1.0 per line cleared, -2.0 for losing the game.
+    \item \textbf{Lines Bonus:} Simulating original Tetris scoring behavior, the model receives +1.0 for clearing a single line, +3.0 for clearing two lines at the same time, +5.0 for clearing three lines at the same time, and +8.0 for clearing four lines at the same time. It also receives the same penalty of -2.0 for losing the game.
+    \item \textbf{Per Block:} This model receives +1.0 per block placed and -2.0 for losing the game.
+\end{itemize}
 
 \subsection{Action Space}
+
 Unlike traditional Tetris where moving pieces is possible while they fall, the agents have access to a \textit{simplified action space}. An action $a$ is defined as the tuple $(x, r)$, where $x$ is the column where the piece should be dropped and $r$ is the number of rotation of the piece. Since the grid is 10 units wide and a piece can be rotated at most 4 times, the action space contains 40 different actions. 
 
 \subsection{Deep Q-Learning (DQN)}
@@ -190,54 +170,62 @@ In this implementation, two distinct neural architectures are used: Neural Netwo
     
 \end{itemize}
 
-To stabilize training of these networks, the networks use \textbf{Experience Replay}. Rather than updating the network weights $\theta$ using only the most recent transition $(S_t, A_t, R_{t+1}, S_{t+1})$, the model keeps experiences in a replay memory $\mathcal{D}$. During the training step, a mini-batch of transitions is sampled from $\mathcal{D}$ to perform a gradient descent update on the Mean Squared Error (MSE) loss:
-\[
-L(\theta) = \mathbb{E} \left[ \left( y_i - Q(s, a; \theta) \right)^2 \right],
-\]
-where the target $y_i$ is derived from the Bellman equation: $y_i = R + \gamma \max_{a'} Q(s', a'; \theta)$.
-
-Furthermore, the $\varepsilon$ variable (of the $\varepsilon$-greedy strategy) is linearly decayed over the training epochs. This ensures that the agent initially explores the large state space of Tetris before converging toward the learned optimal policy $\pi_*$.
-
-
-
 \subsection{State Representation ($S$)} \label{states}
+
 The state space is handled by the \texttt{get\_state\_properties} method in \texttt{tetris.py}, offering two distinct representations based on the chosen architecture.
-\\
 
-The obsvertaion fed to the CNN  is a $20 \times 10$ binary array where 1 represents the presence of a block, and 0 represents an empty space. The hope is that the CNN can discern patterns by itself given this raw board state representation.
-\\
+The observation fed to the CNN is a $20 \times 10$ binary array where 1 represents the presence of a block, and 0 represents an empty space.
 
-For the standard NN, the state representation is simplified to  4 heuristic features:  
+For the standard NN, the state representation is simplified to 4 heuristic features:
 \begin{itemize}
     \item \textbf{Lines Cleared}: number of lines cleared as a result of the given action.
-    \item \textbf{Height}: Sum of the height (highest points with a filled square) of all columns
+    \item \textbf{Height}: Sum of the height of all columns.
     \item \textbf{Bumpiness}: Sum of the absolute differences in height between adjacent columns.
     \item \textbf{Holes}: Number of empty spaces with a filled space somewhere above it.
 \end{itemize}
 
-This simplified domain knowledge has proven to be effective in training linear layers for this Tetris task \autocite{stevenspradhan2016tetris}.
-
 \section{Experiments and Results}
 
 \subsection{Comparison of state representations}
+
 To begin with, both the raw board CNN and heuristic NN models were given the same reward function for training.
 
 The first obvious difference between the 2 was the amount of epochs needed for the models to understand the game.
+
 \textbf{JAKOB CREATE GRAPHICS TO COMPARE MODELS}
 
 In terms of behavior, the raw CNN model starts every game by placing blocks at random with no evident strategy. Only when it gets close to losing does it start placing blocks strategically, prolonging the game further.
 
 The model fails to understand that the placement of the earlier pieces affects the score. Furthermore, it cannot take advantage of the exponential scoring of clearing multiple lines and does not seem to aim for Tetrises.
 
-On the other hand, the heuristic NN model is very efficient in its block placement from the very beginning. Frequently, it leaves an entire column (most often the leftmost or right most column) empty so that it can fit a line piece to score a Tetris.
+On the other hand, the heuristic NN model is very efficient in its block placement from the very beginning. Frequently, it leaves an entire column empty so that it can fit a line piece to score a Tetris.
 
-However, the model sometimes over-focuses on achieving Tetrises, and ends up losing the game before getting the line piece in. A such, it sometimes prioritizes the exponential scoring in the short term over the increase in scoring from prolonging the game.
-
+However, the model sometimes over-focuses on achieving Tetrises, and ends up losing the game before getting the line piece in.
 
 \subsection{Variations in given Rewards}
+Each epoch checkpoint was evaluated over 100 games with a maximum of 100,000 piece placements per game to prevent overly long games. During testing, the model always picked the action with the highest predicted Q-value with no random exploration.
+\begin{figure}[h]
+    \includegraphics[width=\linewidth]{img/chart_blocks_placed.pdf}
+    \caption{The average number of blocks placed by each reward model per game over 100 games at different training epochs.}
+    \label{fig:blocks}
+\end{figure}
 
+\begin{figure}[h]
+    \includegraphics[width=\linewidth]{img/chart_lines_cleared.pdf}
+    \caption{The average number of lines cleared by each reward model per game over 100 games at different training epochs.}
+    \label{fig:lines}
+\end{figure}
 
+\begin{figure}[h]
+    \includegraphics[width=\linewidth]{img/chart_clear_distribution.pdf}
+    \caption{The distribution of number of lines cleared at same time by each reward model at different training epochs over 100 games.}
+    \label{fig:clears}
+\end{figure}
 
+As shown, the Per Block reward scheme produced by far the most resilient model from both the perspective of total blocks placed and lines cleared. The Flat Lines reward scheme seemingly produced the least consistent model, with many games resulting in little to no successful lines cleared. As shown in Figure \ref{fig:clears}, the Lines Bonus scheme produced a model that favored multiple line clears at the same time, whereas Per Block displayed a stronger preference to clearing a single line at a time. This stands to reason, as the Lines Bonus was actively incentivized to clear as many lines at once as possible, whereas Per Block was more focused on surviving as long as possible.
+
+One somewhat surprising result visible in Figures \ref{fig:blocks} and \ref{fig:lines} is that some models actually perform worse at certain later checkpoints than earlier ones. This is seemingly a result of the replay buffer having a fixed size, so older experience gets overwritten over time. Therefore, if the model goes through a particularly bad patch, the buffer fills up with low-quality gameplay, the network trains on that, and performance drops further. This effect is made worse by the fact that by the time the model has reached 300,000 epochs, the value of epsilon is nearly zero, meaning there is essentially no random exploration to help the model recover from whatever suboptimal strategy it has settled into.
 \newpage
 \printbibliography
+
 \end{document}
