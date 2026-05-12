@@ -136,24 +136,54 @@ In the tabular version of Q-learning, the agent stores one value $Q(s,a)$ for ea
 (S_t,A_t,R_{t+1},S_{t+1}),
 \]
 the Q-value is updated as follows \autocite{sutton2018reinforcement}:
-\[
+\begin{align*}
 Q(S_t,A_t)
-\leftarrow
+&\leftarrow
 Q(S_t,A_t)
-+
-\alpha
-\left[
++ \\
+&\alpha
+\Big[
 R_{t+1}
 +
 \gamma \max_{a'} Q(S_{t+1},a')
 -
 Q(S_t,A_t)
-\right].
-\]
+\Big].
+\end{align*}
 
 A common way to select actions during learning is the $\varepsilon$-greedy strategy. With probability $1-\varepsilon$, the agent chooses the action with the highest current Q-value, while with probability $\varepsilon$, it chooses a random action \autocite{geeksforgeeks_qlearning}.
 
 \subsection{Deep Q-Learning}
+
+In classical Q-learning, the agent stores the values $Q(s,a)$ in a table. This works when the number of states and actions is small, but it becomes impossible for larger problems. For example, in Tetris, the number of possible board configurations is very large, so a Q-table would be too big and most states would almost never be visited during training.
+
+Deep Q-learning solves this problem by replacing the Q-table with a neural network. Instead of storing one value for each state-action pair, the algorithm learns a function \autocite{geeksforgeeks_deep_qlearning}
+\[
+Q(s,a;\theta),
+\]
+where $\theta$ are the parameters of the neural network. The network receives a representation of the state as input and predicts Q-values. These predicted values are then used to choose the action, usually with an $\varepsilon$-greedy strategy during training.
+
+The learning target is still based on the same idea as in Q-learning. For a transition
+\[
+(S_t,A_t,R_{t+1},S_{t+1}),
+\]
+the target value is
+\[
+y_t =
+R_{t+1}
++
+\gamma \max_{a'} Q(S_{t+1},a';\theta).
+\]
+The neural network is trained to make its prediction $Q(S_t,A_t;\theta)$ closer to this target. This can be done by minimizing the squared error
+\[
+\mathcal{L}(\theta)
+=
+\left(
+y_t - Q(S_t,A_t;\theta)
+\right)^2.
+\]
+
+In our project, Deep Q-learning is useful because Tetris has too many possible states for tabular Q-learning. The neural network allows the agent to choose a right action even if he did not see the exact same board configuration before, by generalizing from similar situations.
 
 \section{Implementation }
 
@@ -245,6 +275,9 @@ Each epoch checkpoint was evaluated over 100 games with a maximum of 100,000 pie
 As shown, the Per Block reward scheme produced by far the most resilient model from both the perspective of total blocks placed and lines cleared. The Flat Lines reward scheme seemingly produced the least consistent model, with many games resulting in little to no successful lines cleared. As shown in Figure \ref{fig:clears}, the Lines Bonus scheme produced a model that favored multiple line clears at the same time, whereas Per Block displayed a stronger preference to clearing a single line at a time. This stands to reason, as the Lines Bonus was actively incentivized to clear as many lines at once as possible, whereas Per Block was more focused on surviving as long as possible.
 
 One somewhat surprising result visible in Figures \ref{fig:blocks} and \ref{fig:lines} is that some models actually perform worse at certain later checkpoints than earlier ones. This is seemingly a result of the replay buffer having a fixed size, so older experience gets overwritten over time. Therefore, if the model goes through a particularly bad patch, the buffer fills up with low-quality gameplay, the network trains on that, and performance drops further. This effect is made worse by the fact that by the time the model has reached 300,000 epochs, the value of epsilon is nearly zero, meaning there is essentially no random exploration to help the model recover from whatever suboptimal strategy it has settled into.
+
+\section{Conclusion}
+
 \newpage
 \printbibliography
 
