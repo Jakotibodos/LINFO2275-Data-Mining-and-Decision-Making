@@ -202,7 +202,11 @@ The three different reward schemes tested were:
     \item \textbf{Lines Bonus:} Simulating original Tetris scoring behavior, the model receives +1.0 for clearing a single line, +3.0 for clearing two lines at the same time, +5.0 for clearing three lines at the same time, and +8.0 for clearing four lines at the same time. It also receives the same penalty of -2.0 for losing the game.
     \item \textbf{Per Block:} This model receives +1.0 per block placed and -2.0 for losing the game.
 \end{itemize}
-
+A more advanced and complicated reward function was tested. This function used the lines bonus, but also included a penalty for creating overhands in the board. 
+Any time that an overhang was created, a penalty of -1.0 was added. Further, after every block placed, the model would receive a reward relative to how low the current stack was. 
+The motivation for this is readily apparent, as it further incentivizes the model to play "properly". In testing, however, the model consistently failed to clear more than a single line even after 300,000 training epochs.
+This is likely due to a number of factors. This is likely due to a combination of the disincentives quickly heavily outweighing the incentives, combined with the Q-learning model having no actual
+visual representation of the board, as outlined in the following subsection. This reward function is thus excluded from later experimentation.
 \subsection{Action Space}
 
 Unlike traditional Tetris where moving pieces is possible while they fall, the agents have access to a \textit{simplified action space}. An action $a$ is defined as the tuple $(x, r)$, where $x$ is the column where the piece should be dropped and $r$ is the number of rotation of the piece. Since the grid is 10 units wide and a piece can be rotated at most 4 times, the action space contains 40 different actions. 
