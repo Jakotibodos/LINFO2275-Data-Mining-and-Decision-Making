@@ -45,7 +45,7 @@ class Tetris:
          [7, 7, 7]]
     ]
 
-    def __init__(self, height=20, width=10, block_size=20, use_cnn = False):
+    def __init__(self, height=20, width=10, block_size=20, use_cnn = False, reward_mode = "regular_reward"):
         self.height = height
         self.width = width
         self.block_size = block_size
@@ -53,6 +53,7 @@ class Tetris:
                                    dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
         self.text_color = (200, 20, 220)
         self.use_cnn = use_cnn #Affects game property 
+        self.reward_mode = "regular_reward"
         self.reset()
 
     def reset(self):
@@ -234,14 +235,28 @@ class Tetris:
         self.tetrominoes += 1
         self.cleared_lines += lines_cleared
 
+
+        if self.reward_mode == "regular_reward":
+            reward = score
+        elif self.reward_mode == "lines_flat":
+            reward = lines_cleared
+        elif self.reward_mode == "per_block":
+            reward = 1
+        elif self.reward_mode == "lines_bonus":
+            reward = [1,3,5,8][lines_cleared-1]
+
+
         if lines_cleared != 0:#ADDED BY JAKOB
             self.cleared_lines_distribution[lines_cleared]+=1 #ADDED BY JAKOB
         if not self.gameover:
             self.new_piece()
         if self.gameover:
             self.score -= 2
+            reward -= 2
 
-        return score, self.gameover
+        
+
+        return reward, self.gameover
 
     def render(self, video=None):
         if not self.gameover:

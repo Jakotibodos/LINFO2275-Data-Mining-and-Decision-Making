@@ -28,16 +28,16 @@ def get_args():
     parser.add_argument("--gamma", type=float, default=0.99)
     parser.add_argument("--initial_epsilon", type=float, default=1)
     parser.add_argument("--final_epsilon", type=float, default=1e-3)
-    parser.add_argument("--num_decay_epochs", type=float, default=300000) #Was 2000
+    parser.add_argument("--num_decay_epochs", type=float, default=50000) #Was 2000
     parser.add_argument("--num_epochs", type=int, default=300000) #WAS 3000
     parser.add_argument("--save_interval", type=int, default=50000)
     parser.add_argument("--replay_memory_size", type=int, default=30000,
                         help="Number of epoches between testing phases")
     parser.add_argument("--log_path", type=str, default="tensorboard")
     parser.add_argument("--saved_path", type=str, default="trained_models")
-    parser.add_argument("--use_cnn", type=bool, default=True) #was False ADDED
-    parser.add_argument("--model_path", type=str, default="trained_models/cnn_model", help="Path to a saved model to continue training")
-    parser.add_argument("--start_epoch", type=int, default=100000, help="The epoch to start from")
+    parser.add_argument("--use_cnn", type=bool, default=False) #was False ADDED
+    parser.add_argument("--model_path", type=str, default="trained_models/NN_model", help="Path to a saved model to continue training")
+    parser.add_argument("--start_epoch", type=int, default=0, help="The epoch to start from")
 
     args = parser.parse_args()
     return args
@@ -100,7 +100,7 @@ def train(opt):
         next_state = next_states[index, :]
         action = next_actions[index]
 
-        reward, done = env.step(action, render=(epoch%100==1)) #CHANGE TO TRUE TO RENDER 
+        reward, done = env.step(action, render=(epoch%10000==1)) #CHANGE TO TRUE TO RENDER 
         steps_in_episode += 1
 
         if steps_in_episode >= max_steps_per_episode:
@@ -163,9 +163,9 @@ def train(opt):
         writer.add_scalar('Train/Cleared lines', final_cleared_lines, epoch - 1)
 
         if epoch > 0 and epoch % opt.save_interval == 0:
-            torch.save(model, "{}/cnn_model_plus_{}".format(opt.saved_path, epoch))
+            torch.save(model, "{}/NN_model{}".format(opt.saved_path, epoch))
 
-    torch.save(model, "{}/cnn_model_plus".format(opt.saved_path))
+    torch.save(model, "{}/NN_model".format(opt.saved_path))
 
 
 if __name__ == "__main__":

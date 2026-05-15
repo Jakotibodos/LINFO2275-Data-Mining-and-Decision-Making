@@ -22,7 +22,6 @@ class CnnQNetwork(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        # x shape: (batch, height, width) -> add channel dim
         if len(x.shape) == 3:
             x = x.unsqueeze(1) 
             
