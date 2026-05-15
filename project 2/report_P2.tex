@@ -1,4 +1,4 @@
-\documentclass[12pt, twocolumn]{article}
+\documentclass[12pt]{article}
 
 \usepackage{amsfonts,amsmath,amssymb}
 \DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
@@ -189,6 +189,8 @@ In our project, Deep Q-learning is useful because Tetris has too many possible s
 
 In this project, the Tetris environment is modeled as a Markov Decision Process (MDP) and solved using Deep Q-Networks (DQN). The implementation bridges the gap between raw game states and the reinforcement learning framework. The game and implementation of DQN are extensions of the work of Viet Nguyen \autocite{tetrisVietnhGithub}.
 
+Our first attempt was to use Proximal Policy Optimization (PPO), which is a policy-based algorithm. However, we found that a policy-based method was not well-suited for Tetris, as the number of actions leading to the same outcome is very large. Indeed, the way pieces arrive at their final position does not really matter, so the action \textit{move left} is not interesting in itself, as we only care about the final position. This is why we switched to a value-based method, which focuses on learning the value of states and actions rather than directly learning a policy \autocite{policybased}.
+
 \subsection{Environment}
 
 Tetris is a game where blocs of differents shapes and sizes appear at the top of a grid board and fall with time. The goal is to place as many blocks as possible without filling in the whole grid. If an entire row is filled when placing a block, that entire row disappears, and the player scores points. The highest number of rows that can be removed at once is 4, and doing so is called a \textit{Tetris}.
@@ -258,19 +260,19 @@ However, the model sometimes over-focuses on achieving Tetrises, and ends up los
 
 \subsection{Variations in given Rewards}
 Each epoch checkpoint was evaluated over 100 games with a maximum of 100,000 piece placements per game to prevent overly long games. During testing, the model always picked the action with the highest predicted Q-value with no random exploration.
-\begin{figure}[h]
+\begin{figure}[H]
     \includegraphics[width=\linewidth]{img/chart_blocks_placed.pdf}
     \caption{The average number of blocks placed by each reward model per game over 100 games at different training epochs.}
     \label{fig:blocks}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
     \includegraphics[width=\linewidth]{img/chart_lines_cleared.pdf}
     \caption{The average number of lines cleared by each reward model per game over 100 games at different training epochs.}
     \label{fig:lines}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[H]
     \includegraphics[width=\linewidth]{img/chart_clear_distribution.pdf}
     \caption{The distribution of number of lines cleared at same time by each reward model at different training epochs over 100 games.}
     \label{fig:clears}
@@ -281,6 +283,14 @@ As shown, the Per Block reward scheme produced by far the most resilient model f
 One somewhat surprising result visible in Figures \ref{fig:blocks} and \ref{fig:lines} is that some models actually perform worse at certain later checkpoints than earlier ones. This is seemingly a result of the replay buffer having a fixed size, so older experience gets overwritten over time. Therefore, if the model goes through a particularly bad patch, the buffer fills up with low-quality gameplay, the network trains on that, and performance drops further. This effect is made worse by the fact that by the time the model has reached 300,000 epochs, the value of epsilon is nearly zero, meaning there is essentially no random exploration to help the model recover from whatever suboptimal strategy it has settled into.
 
 \section{Conclusion}
+
+In this project, we implemented Deep Q-Learning to train agents to play a simplified version of Tetris. We compared two different state representations: first, a heuristic feature representation processed by a standard neural network, and then a convolutional neural network processing a binary board representation. We also investigated the effect of different reward functions on the behaviour of the agents.
+
+Our results show that the choice of state representation has a significant impact on the performance. The heuristic feature representation allowed the agent to learn a reasonable strategy more quickly, while the binary board representation required more training and did not perform as well. This suggests that providing a more compact state representation can help the learning process.
+
+Regarding the reward functions, we found that rewarding the agent for placing blocks (Per Block) led to better performance in terms of survival time and number of lines cleared, compared to rewarding only for clearing lines (Lines Flat and Lines Bonus). This indicates that focusing only on clearing lines is not sufficient for the agent to survive longer, and place more blocks can lead to a more efficient strategy.
+
+Overall, our experiments demonstrate that Deep Q-Learning can be used to train agents to play Tetris, but the choice of state representation and reward function is crucial for achieving good performance.
 
 \newpage
 \printbibliography
