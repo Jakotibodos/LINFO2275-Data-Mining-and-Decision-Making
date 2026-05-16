@@ -75,30 +75,30 @@ Academic year 2025-2026 \hspace*{\stretch{0.75}} Ecole Polytechnique de Louvain\
 
 \section{Introduction}
 
-Reinforcement learning is a useful framework for problems where an agent has to take decisions step by step. The agent does not know in advance what the best action is, but it learns by interacting with the environment and by receiving rewards. This is why games are often used to test reinforcement learning algorithms, since every action can influence not only the current state, but also the future states of the game.
+Reinforcement learning is a useful framework for problems where an agent has to take decisions step by step. While the agent does not know in advance what the best action is, it learns through interactions with the environment and receiving rewards and penalties. This is why games are often used to test reinforcement learning algorithms, since every action influences not only the current state, but also the future states of the game.
 
-In the first part of the project, we studied Markov decision processes and value iteration on the Snakes and Ladders game. In this second part, we wanted to investigate a more complex application, where exact methods such as value iteration are not really practical anymore. For this reason, we chose to work on Tetris. Tetris is an interesting game for reinforcement learning because the player must decide where to place each piece depending on the current board. Some decisions can look good in the short term, for example clearing one line, but can also create holes or make the board harder to play later. Therefore, the agent has to learn a strategy that takes into account both immediate and future rewards.
+In the first part of the project, we studied Markov decision processes and value iteration on the Snakes and Ladders game. In this second part, we wanted to investigate a more complex application, where exact methods such as value iteration are no longer practical. For this reason, we chose to work on Tetris. Tetris is an interesting game for reinforcement learning because the player must decide where to place each piece depending on the current board. Some decisions may appear good in the short term, for example clearing one line, but might also create holes or make the board more difficult to clear later. Therefore, the agent has to learn a strategy that accounts for both immediate and future rewards.
 
-The goal of this project is to study how Deep Q-Learning can be used to train an agent to play a simplified version of Tetris. Since the number of possible board configurations is very large, it is not possible to use a classical Q-table with one value for each state-action pair. Instead, we use neural networks to approximate the Q-values. We compare two different game-state representations: one using the full board as a binary grid processed by a convolutional neural network and the other using a smaller set of heuristic features given to a neural network.
+The goal of this project is to study how Deep Q-Learning can be used to train an agent to play a simplified version of Tetris. Since the number of possible board configurations is extremely large, it is not possible to use a classical Q-table with one value for each state-action pair. Instead, we use neural networks to approximate the Q-values. We compare two different game-state representations: one using the full board as a binary grid processed by a convolutional neural network and the other using a smaller set of heuristic features given to a neural network.
 
-We also investigate the effect of the reward function on the learned behaviour. %Indeed, the way rewards are defined can strongly influence what the agent learns. For example, rewarding the agent for clearing lines may lead to a different strategy than rewarding it for surviving longer and placing more blocks. In our experiments, 
-by comparing several reward schemes and evaluating the trained models according to different criteria, such as the number of blocks placed or the number of lines cleared.
+We also investigate the effect of the reward function on the learned behaviour %Indeed, the way rewards are defined can strongly influence what the agent learns. For example, rewarding the agent for clearing lines may lead to a different strategy than rewarding it for surviving longer and placing more blocks. In our experiments, 
+by comparing several reward schemes and evaluating the trained models according to different success criteria, such as the number of blocks placed or the number of lines cleared.
 
-The main questions we want to answer are:
+The main questions we aim to answer are:
 \begin{itemize}
     \item Can a Deep Q-Learning agent learn a reasonable strategy for Tetris?
     \item Does the choice of state representation have an important impact on the performance?
     \item How does the reward function change the behaviour of the agent?
-    \item Which model performs best in terms of survival time and number of lines cleared?
+    \item Which model performs best as definied by total survival time and number of lines cleared?
 \end{itemize}
 
-The rest of the report is organised as follows. First, we introduce the theoretical background of Q-learning and Deep Q-Learning. Then, we describe the Tetris environment, the state and action spaces, and the reward functions used during training. Finally, we present the experimental results and compare the different trained models.
+The remainder of the report is organized as follows. First, we introduce the theoretical background of Q-learning and Deep Q-Learning. Then, we describe the Tetris environment, the state and action spaces, and the reward functions used during training. Finally, we present the experimental results and compare the different trained models.
 
 \section{Theoretical Background}
 
 \subsection{Q-learning}
 
-Q-learning is a model-free reinforcement learning algorithm for learning optimal behaviour through interaction with an environment. It is model-free because it does not require a model of the environment, such as the transition probabilities or reward function. Instead, the agent learns from experience, by trying actions and observing the obtained rewards. In the standard formulation, the environment is modelled as a Markov decision process (MDP) defined by:
+Q-learning is a model-free reinforcement learning algorithm for learning optimal behaviour through interaction with an environment. It is model-free as it does not require a model of the environment, such as the transition probabilities or reward function. Rather, the agent learns directly from experience by trying actions and observing the obtained rewards. In the standard formulation, the environment is modelled as a Markov decision process (MDP) defined by:
 \begin{itemize}
     \item a set of states $\mathcal{S}$,
     \item a set of actions $\mathcal{A}$,
@@ -106,7 +106,7 @@ Q-learning is a model-free reinforcement learning algorithm for learning optimal
     \item a discount factor $\gamma \in [0,1]$ that determines the importance of future rewards.
 \end{itemize}
 
-At time $t$, the agent observes a state $S_t$, selects an action $A_t$, receives a reward $R_{t+1}$, and moves to a new state $S_{t+1}$. The objective is to learn a policy that maximises the expected return, where the return is the discounted sum of future rewards:
+At time $t$, the agent observes a state $S_t$, selects an action $A_t$, receives a reward $R_{t+1}$, and moves to a new state $S_{t+1}$. The objective is to learn a policy that maximizes the expected return, where the return is the discounted sum of future rewards:
 \[
 G_t = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}.
 \]
@@ -156,7 +156,7 @@ A common way to select actions during learning is the $\varepsilon$-greedy strat
 
 \subsection{Deep Q-Learning}
 
-In classical Q-learning, the agent stores the values $Q(s,a)$ in a table. This works when the number of states and actions is small, but it becomes impossible for larger problems. For example, in Tetris, the number of possible board configurations is very large, so a Q-table would be too big and most states would almost never be visited during training.
+In classical Q-learning, the agent stores the values $Q(s,a)$ in a table. This works when the number of states and actions is small, but it becomes impossible for larger problems. For example, in Tetris, the number of possible board configurations is incredibly large, so a Q-table would be impractical and the large majority of states would almost never be visited during training.
 
 Deep Q-learning solves this problem by replacing the Q-table with a neural network. Instead of storing one value for each state-action pair, the algorithm learns a function \autocite{geeksforgeeks_deep_qlearning}
 \[
@@ -304,7 +304,7 @@ Since the heuristic NN model outperforms the CNN model, we explore the effect of
 Each epoch checkpoint was evaluated over 100 games with a maximum of 100,000 piece placements per game to prevent overly long games. During testing, the model always picked the action with the highest predicted Q-value with no random exploration.
 \\
 
-The Per Block reward scheme produced by far the most resilient model from both the perspective of total blocks placed and lines cleared. The Regular Reward and Flat Lines reward schemes were the least consistent models, with many games resulting in fewer successful lines cleared. As shown in Figure \ref{fig:clears}, the Lines Bonus scheme produced a model that favores multiple line clears at the same time, whereas Per Block displayed a stronger preference to clearing a single line at a time. This stands to reason, as the Lines Bonus was actively incentivized to clear as many lines at once as possible, whereas Per Block was more focused on surviving as long as possible. Although the Regular Reward model has a higher proportion of completed Tetrises, it consistently achieves lower scores than the Per Block model since it prioritizes Tetrises over prolonging the game in many instances.
+The Per Block reward scheme produced by far the most resilient model from both the perspective of total blocks placed and lines cleared. The Regular Reward and Flat Lines reward schemes were the least consistent models, with many games resulting in fewer successful lines cleared. As shown in Figure \ref{fig:clears}, the Lines Bonus scheme produced a model that favors multiple line clears at the same time, whereas Per Block displayed a stronger preference to clearing a single line at a time. This stands to reason, as the Lines Bonus was actively incentivized to clear as many lines at once as possible, whereas Per Block was more focused on surviving as long as possible. Although the Regular Reward model has a higher proportion of completed Tetrises, it consistently achieves lower scores than the Per Block model since it prioritizes Tetrises over prolonging the game in many instances.
 
 One somewhat surprising result visible in Figures \ref{fig:blocks} and \ref{fig:lines} is that some models actually perform worse at later checkpoints. This may be a result of the replay buffer having a fixed size, meaning older experiences get overwritten over time. Therefore, if a model performs badly over a high number of epochs, the buffer fills up with low-quality gameplay, which the model trains on, and performance drops further. This effect is worsened by the fact that by the time the model has reached 300,000 epochs, the value of epsilon is nearly zero, meaning there is essentially no random exploration to help the model recover from whatever suboptimal strategy it has settled into.
 
